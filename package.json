@@ -1,0 +1,31 @@
+{
+  "name": "nexus-erp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Sistema ERP moderno para retail",
+  "scripts": {
+    "dev": "pnpm --filter web dev",
+    "dev:api": "pnpm --filter api start:dev",
+    "dev:all": "pnpm --parallel --filter web --filter api dev",
+    "build": "pnpm --filter web build && pnpm --filter api build",
+    "build:web": "pnpm --filter web build",
+    "build:api": "pnpm --filter api build",
+    "lint": "pnpm -r lint",
+    "db:generate": "pnpm --filter database prisma generate",
+    "db:migrate": "pnpm --filter database prisma migrate dev",
+    "db:seed": "pnpm --filter database prisma db seed"
+  },
+  "keywords": [
+    "erp",
+    "nextjs",
+    "nestjs",
+    "prisma",
+    "monorepo"
+  ],
+  "author": "",
+  "license": "ISC",
+  "engines": {
+    "node": ">=18.0.0",
+    "pnpm": ">=8.0.0"
+  }
+}

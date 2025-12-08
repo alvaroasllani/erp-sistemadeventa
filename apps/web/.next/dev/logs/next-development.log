@@ -1,0 +1,9 @@
+[00:00:03.429] Server  LOG      ✓ Ready in 2.7s
+[00:00:16.924] Server  LOG      ○ Compiling / ...
+[00:00:20.088] Browser INFO    %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold
+[00:00:27.130] Browser DEBUG   TSS: Counted history being pushed
+[00:00:27.130] Browser DEBUG   TSS: Caught history
+[00:00:27.130] Browser DEBUG   TSS: Checking if repeated 500 times for interval 1000 against data:  {}
+[00:00:29.745] Browser DEBUG   TSS: Counted history being pushed
+[00:00:29.745] Browser DEBUG   TSS: Caught history
+[00:00:29.745] Browser DEBUG   TSS: Checking if repeated 500 times for interval 1000 against data:  {"lastCount":1,"lastTime":1765229634840}
