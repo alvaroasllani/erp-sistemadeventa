@@ -1,8 +1,7 @@
 "use client";
 
-import { type LucideIcon } from "lucide-react";
-import { Card, CardContent } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { type LucideIcon, FileText } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 
 type KPIVariant = "default" | "success" | "warning" | "danger";
@@ -10,69 +9,79 @@ type KPIVariant = "default" | "success" | "warning" | "danger";
 interface KPICardProps {
     title: string;
     value: string;
+    subtitle?: string;
     change?: string;
     changeType?: "positive" | "negative" | "neutral";
     icon: LucideIcon;
+    subtitleIcon?: LucideIcon;
     variant?: KPIVariant;
     className?: string;
 }
 
-const variantStyles: Record<KPIVariant, string> = {
-    default: "bg-primary/10 text-primary",
-    success: "bg-green-100 text-green-600",
-    warning: "bg-yellow-100 text-yellow-600",
-    danger: "bg-red-100 text-red-600",
-};
-
-const changeStyles = {
-    positive: "bg-green-100 text-green-700",
-    negative: "bg-red-100 text-red-700",
-    neutral: "bg-muted text-muted-foreground",
-};
-
 export function KPICard({
     title,
     value,
+    subtitle,
     change,
     changeType = "neutral",
     icon: Icon,
+    subtitleIcon: SubtitleIcon = FileText,
     variant = "default",
     className,
 }: KPICardProps) {
     return (
-        <Card className={cn("hover:shadow-md transition-shadow duration-200", className)}>
-            <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                    <div className="flex flex-col gap-1">
-                        <p className="text-sm font-medium text-muted-foreground">{title}</p>
-                        <p className={cn(
-                            "text-2xl font-bold tracking-tight",
-                            variant === "danger" && "text-red-600"
-                        )}>
-                            {value}
-                        </p>
-                        {change && (
-                            <Badge
-                                variant="secondary"
-                                className={cn(
-                                    "mt-1 w-fit font-medium text-xs",
-                                    changeStyles[changeType]
-                                )}
-                            >
-                                {change}
-                            </Badge>
-                        )}
-                    </div>
-                    <div
-                        className={cn(
-                            "flex h-12 w-12 items-center justify-center rounded-lg",
-                            variantStyles[variant]
-                        )}
-                    >
-                        <Icon className="h-6 w-6" />
-                    </div>
+        <div
+            className={cn(
+                "relative p-5 rounded-xl border border-border bg-card shadow-sm overflow-hidden hover:shadow-md transition-shadow duration-200",
+                className
+            )}
+        >
+            <div className="flex items-start justify-between">
+                <div className="flex flex-col gap-3">
+                    {/* Title - Small and muted */}
+                    <p className="text-sm font-medium text-muted-foreground">
+                        {title}
+                    </p>
+
+                    {/* Value - Large and bold with high contrast */}
+                    <p className={cn(
+                        "text-3xl font-bold tracking-tight text-foreground",
+                        variant === "danger" && "text-destructive"
+                    )}>
+                        {value}
+                    </p>
+
+                    {/* Change Badge or Subtitle */}
+                    {(change || subtitle) && (
+                        <div className="flex items-center gap-2">
+                            {change ? (
+                                <span className={cn(
+                                    "inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium",
+                                    changeType === "positive" && "bg-green-500/10 text-green-600 dark:text-green-400",
+                                    changeType === "negative" && "bg-red-500/10 text-red-600 dark:text-red-400",
+                                    changeType === "neutral" && "bg-muted text-muted-foreground"
+                                )}>
+                                    {change}
+                                </span>
+                            ) : subtitle && (
+                                <div className="flex items-center gap-1.5 text-muted-foreground">
+                                    <SubtitleIcon className="size-3.5" />
+                                    <span className="text-sm">{subtitle}</span>
+                                </div>
+                            )}
+                        </div>
+                    )}
                 </div>
-            </CardContent>
-        </Card>
+
+                {/* Icon Button */}
+                <Button
+                    variant="outline"
+                    size="icon"
+                    className="size-10"
+                >
+                    <Icon className="size-5 text-muted-foreground" />
+                </Button>
+            </div>
+        </div>
     );
 }

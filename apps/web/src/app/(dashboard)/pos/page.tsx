@@ -29,14 +29,14 @@ export default function POSPage() {
     }, []);
 
     return (
-        <div className="flex h-[calc(100vh-7rem)] gap-6">
-            {/* Products Grid - Left side */}
-            <div className="flex-1 min-w-0">
+        <div className="flex -m-6" style={{ height: 'calc(100vh - 4rem)' }}>
+            {/* Products Grid - Left side with slate background */}
+            <div className="flex-1 min-w-0 bg-muted/50 p-6 overflow-hidden">
                 <ProductGrid className="h-full" />
             </div>
 
-            {/* Sales Ticket - Right side */}
-            <div className="w-full max-w-md flex-shrink-0">
+            {/* Sales Ticket - Right side fixed height */}
+            <div className="w-full max-w-md flex-shrink-0 h-full overflow-hidden">
                 <SalesTicket />
             </div>
         </div>

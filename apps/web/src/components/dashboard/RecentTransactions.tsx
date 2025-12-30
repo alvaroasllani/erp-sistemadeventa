@@ -1,8 +1,8 @@
 "use client";
 
-import { ArrowDownRight, ArrowUpRight, RotateCcw } from "lucide-react";
+import Link from "next/link";
+import { ArrowDownRight, ArrowUpRight, RotateCcw, ArrowRight } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { mockTransactions } from "@/lib/mock-data";
 import { formatCurrency, formatRelativeTime, cn } from "@/lib/utils";
@@ -16,21 +16,21 @@ const transactionIcons = {
 
 const transactionStyles = {
     sale: {
-        bg: "bg-green-100",
-        icon: "text-green-600",
-        amount: "text-green-600",
+        bg: "bg-green-500/10",
+        icon: "text-green-600 dark:text-green-400",
+        amount: "text-green-600 dark:text-green-400",
         prefix: "+",
     },
     expense: {
-        bg: "bg-red-100",
-        icon: "text-red-600",
-        amount: "text-red-600",
+        bg: "bg-red-500/10",
+        icon: "text-red-600 dark:text-red-400",
+        amount: "text-red-600 dark:text-red-400",
         prefix: "-",
     },
     refund: {
-        bg: "bg-yellow-100",
-        icon: "text-yellow-600",
-        amount: "text-yellow-600",
+        bg: "bg-amber-500/10",
+        icon: "text-amber-600 dark:text-amber-400",
+        amount: "text-amber-600 dark:text-amber-400",
         prefix: "-",
     },
 };
@@ -48,7 +48,7 @@ function TransactionItem({ transaction }: { transaction: Transaction }) {
                         styles.bg
                     )}
                 >
-                    <Icon className={cn("h-4 w-4", styles.icon)} />
+                    <Icon className={cn("h-4 w-4", styles.icon)} strokeWidth={2} />
                 </div>
                 <div className="flex flex-col">
                     <span className="text-sm font-medium text-foreground">
@@ -59,7 +59,10 @@ function TransactionItem({ transaction }: { transaction: Transaction }) {
                     </span>
                 </div>
             </div>
-            <span className={cn("text-sm font-semibold", styles.amount)}>
+            <span className={cn(
+                "text-sm font-semibold tabular-nums text-right",
+                styles.amount
+            )}>
                 {styles.prefix}{formatCurrency(transaction.amount)}
             </span>
         </div>
@@ -87,9 +90,13 @@ export function RecentTransactions() {
                         ))}
                     </div>
                 </ScrollArea>
-                <Button variant="outline" className="w-full mt-4">
-                    Ver todas las transacciones
-                </Button>
+                <Link
+                    href="/finanzas"
+                    className="flex items-center justify-center gap-1.5 mt-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors group"
+                >
+                    Ver todo
+                    <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
+                </Link>
             </CardContent>
         </Card>
     );

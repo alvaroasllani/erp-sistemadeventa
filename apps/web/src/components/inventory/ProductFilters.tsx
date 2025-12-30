@@ -24,7 +24,7 @@ export function ProductFilters({ filters, onFiltersChange }: ProductFiltersProps
             <div className="relative flex-1 max-w-sm">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
-                    placeholder="Buscar por SKU o nombre..."
+                    placeholder="Buscar por código o nombre..."
                     value={filters.search}
                     onChange={(e) =>
                         onFiltersChange({ ...filters, search: e.target.value })

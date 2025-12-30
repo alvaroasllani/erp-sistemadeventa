@@ -36,13 +36,13 @@ export function ProductGrid({ className }: ProductGridProps) {
                     placeholder="Buscar productos... (F2)"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    className="h-12 pl-10 text-base"
+                    className="h-12 pl-10 text-base bg-background border-border rounded-xl shadow-sm"
                 />
             </div>
 
             {/* Products Grid */}
             <div className="flex-1 overflow-auto">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5">
+                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 pb-4">
                     {filteredProducts.map((product) => (
                         <ProductCard key={product.id} product={product} />
                     ))}

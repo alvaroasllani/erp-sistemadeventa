@@ -27,8 +27,8 @@ interface CustomTooltipProps {
 function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
     if (active && payload && payload.length) {
         return (
-            <div className="rounded-lg border border-border bg-background p-3 shadow-lg">
-                <p className="font-medium text-foreground mb-2">{label}</p>
+            <div className="rounded-lg border border-border bg-popover p-3 shadow-lg">
+                <p className="font-medium text-popover-foreground mb-2">{label}</p>
                 {payload.map((entry, index) => (
                     <div key={index} className="flex items-center gap-2 text-sm">
                         <div
@@ -38,7 +38,7 @@ function CustomTooltip({ active, payload, label }: CustomTooltipProps) {
                         <span className="text-muted-foreground">
                             {entry.dataKey === "sales" ? "Ventas" : "Gastos"}:
                         </span>
-                        <span className="font-medium">{formatCurrency(entry.value)}</span>
+                        <span className="font-medium text-popover-foreground">{formatCurrency(entry.value)}</span>
                     </div>
                 ))}
             </div>
@@ -62,18 +62,25 @@ export function SalesChart() {
                         data={mockSalesChartData}
                         margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                     >
-                        <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                        <CartesianGrid
+                            strokeDasharray="0"
+                            stroke="hsl(var(--border))"
+                            strokeOpacity={0.5}
+                            vertical={false}
+                        />
                         <XAxis
                             dataKey="day"
-                            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                            tick={{ fill: "currentColor", fontSize: 12 }}
                             tickLine={false}
                             axisLine={false}
+                            className="text-foreground"
                         />
                         <YAxis
-                            tick={{ fill: "hsl(var(--muted-foreground))", fontSize: 12 }}
+                            tick={{ fill: "currentColor", fontSize: 12 }}
                             tickLine={false}
                             axisLine={false}
-                            tickFormatter={(value) => `$${(value / 1000).toFixed(0)}k`}
+                            tickFormatter={(value) => `Bs${(value / 1000).toFixed(0)}k`}
+                            className="text-foreground"
                         />
                         <Tooltip content={<CustomTooltip />} />
                         <Legend
@@ -90,15 +97,15 @@ export function SalesChart() {
                             dataKey="sales"
                             name="sales"
                             fill="hsl(239 84% 67%)"
-                            radius={[4, 4, 0, 0]}
-                            maxBarSize={40}
+                            radius={[6, 6, 0, 0]}
+                            maxBarSize={32}
                         />
                         <Bar
                             dataKey="expenses"
                             name="expenses"
-                            fill="hsl(240 5% 65%)"
-                            radius={[4, 4, 0, 0]}
-                            maxBarSize={40}
+                            fill="hsl(350 89% 60%)"
+                            radius={[6, 6, 0, 0]}
+                            maxBarSize={32}
                         />
                     </BarChart>
                 </ResponsiveContainer>

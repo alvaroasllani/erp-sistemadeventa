@@ -1,6 +1,6 @@
 "use client";
 
-import { MoreHorizontal, Pencil, Trash2 } from "lucide-react";
+import { Pencil, Trash2, AlertTriangle } from "lucide-react";
 import {
     Table,
     TableBody,
@@ -9,17 +9,8 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import { StockBadge } from "./StockBadge";
-import { formatCurrency } from "@/lib/utils";
-import { CATEGORY_COLORS } from "@/lib/constants";
+import { formatCurrency, cn } from "@/lib/utils";
 import type { Product } from "@/types/product.types";
 
 interface ProductTableProps {
@@ -27,6 +18,48 @@ interface ProductTableProps {
     currentPage: number;
     totalPages: number;
     onPageChange: (page: number) => void;
+}
+
+function StockDisplay({ stock, minStock = 10 }: { stock: number; minStock?: number }) {
+    const isLow = stock < minStock;
+    const isOut = stock === 0;
+
+    if (isOut) {
+        return (
+            <div className="flex items-center justify-center gap-1.5">
+                <AlertTriangle className="size-4 text-red-500 dark:text-red-400" />
+                <span className="text-sm font-medium text-red-600 dark:text-red-400">Sin stock</span>
+            </div>
+        );
+    }
+
+    if (isLow) {
+        return (
+            <div className="flex items-center justify-center gap-1.5">
+                <AlertTriangle className="size-4 text-amber-500 dark:text-amber-400" />
+                <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{stock} uds</span>
+            </div>
+        );
+    }
+
+    return (
+        <span className="text-sm text-muted-foreground tabular-nums">{stock} uds</span>
+    );
+}
+
+function StatusBadge({ status }: { status: "active" | "inactive" }) {
+    if (status === "active") {
+        return (
+            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-700 dark:text-green-400 ring-1 ring-green-600/20">
+                Activo
+            </span>
+        );
+    }
+    return (
+        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground ring-1 ring-border">
+            Inactivo
+        </span>
+    );
 }
 
 export function ProductTable({
@@ -38,11 +71,11 @@ export function ProductTable({
     return (
         <div className="space-y-4">
             {/* Table */}
-            <div className="rounded-lg border border-border">
+            <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
                 <Table>
                     <TableHeader>
                         <TableRow className="hover:bg-transparent">
-                            <TableHead className="w-[100px] font-semibold">SKU</TableHead>
+                            <TableHead className="w-[100px] font-semibold">Código</TableHead>
                             <TableHead className="font-semibold">Producto</TableHead>
                             <TableHead className="font-semibold">Categoría</TableHead>
                             <TableHead className="font-semibold text-right">
@@ -75,58 +108,41 @@ export function ProductTable({
                                     <TableCell className="font-mono text-sm text-muted-foreground">
                                         {product.sku}
                                     </TableCell>
-                                    <TableCell className="font-medium">{product.name}</TableCell>
+                                    <TableCell className="font-medium text-foreground">{product.name}</TableCell>
                                     <TableCell>
-                                        <Badge
-                                            variant="secondary"
-                                            className={CATEGORY_COLORS[product.category]}
-                                        >
+                                        <span className="text-sm font-medium text-foreground">
                                             {product.category}
-                                        </Badge>
+                                        </span>
                                     </TableCell>
-                                    <TableCell className="text-right text-muted-foreground">
+                                    <TableCell className="text-right text-muted-foreground tabular-nums">
                                         {formatCurrency(product.costPrice)}
                                     </TableCell>
-                                    <TableCell className="text-right font-semibold">
+                                    <TableCell className="text-right font-semibold text-foreground tabular-nums">
                                         {formatCurrency(product.salePrice)}
                                     </TableCell>
                                     <TableCell className="text-center">
-                                        <StockBadge stock={product.stock} minStock={product.minStock} />
+                                        <StockDisplay stock={product.stock} minStock={product.minStock} />
                                     </TableCell>
                                     <TableCell>
-                                        <Badge
-                                            variant="secondary"
-                                            className={
-                                                product.status === "active"
-                                                    ? "bg-green-100 text-green-700"
-                                                    : "bg-gray-100 text-gray-600"
-                                            }
-                                        >
-                                            {product.status === "active" ? "Activo" : "Inactivo"}
-                                        </Badge>
+                                        <StatusBadge status={product.status} />
                                     </TableCell>
                                     <TableCell>
-                                        <DropdownMenu>
-                                            <DropdownMenuTrigger asChild>
-                                                <Button
-                                                    variant="ghost"
-                                                    size="icon"
-                                                    className="h-8 w-8 text-muted-foreground"
-                                                >
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                </Button>
-                                            </DropdownMenuTrigger>
-                                            <DropdownMenuContent align="end">
-                                                <DropdownMenuItem>
-                                                    <Pencil className="mr-2 h-4 w-4" />
-                                                    Editar
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem className="text-destructive focus:text-destructive">
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Eliminar
-                                                </DropdownMenuItem>
-                                            </DropdownMenuContent>
-                                        </DropdownMenu>
+                                        <div className="flex items-center justify-end gap-1">
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                            >
+                                                <Pencil className="h-4 w-4" />
+                                            </Button>
+                                            <Button
+                                                variant="outline"
+                                                size="icon"
+                                                className="h-8 w-8 text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+                                            >
+                                                <Trash2 className="h-4 w-4" />
+                                            </Button>
+                                        </div>
                                     </TableCell>
                                 </TableRow>
                             ))

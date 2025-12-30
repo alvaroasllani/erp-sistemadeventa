@@ -6,12 +6,12 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 /**
- * Format a number as currency (USD)
+ * Format a number as currency (Bolivianos)
  */
 export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat("es-DO", {
+  return new Intl.NumberFormat("es-BO", {
     style: "currency",
-    currency: "DOP",
+    currency: "BOB",
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(amount);
