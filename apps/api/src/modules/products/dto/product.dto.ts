@@ -1,6 +1,6 @@
 import { IsString, IsNumber, IsOptional, IsEnum, Min } from "class-validator";
 import { ApiProperty, PartialType } from "@nestjs/swagger";
-import { ProductCategory, ProductStatus } from "@prisma/client";
+import { ProductStatus } from "@prisma/client";
 
 export class CreateProductDto {
     @ApiProperty({ example: "FER-001" })
@@ -16,9 +16,10 @@ export class CreateProductDto {
     @IsOptional()
     description?: string;
 
-    @ApiProperty({ enum: ProductCategory, example: "HERRAMIENTAS" })
-    @IsEnum(ProductCategory)
-    category: ProductCategory;
+    @ApiProperty({ required: false, description: "Category ID (dynamic per tenant)" })
+    @IsString()
+    @IsOptional()
+    categoryId?: string;
 
     @ApiProperty({ example: 120 })
     @IsNumber()
@@ -53,3 +54,4 @@ export class CreateProductDto {
 }
 
 export class UpdateProductDto extends PartialType(CreateProductDto) { }
+

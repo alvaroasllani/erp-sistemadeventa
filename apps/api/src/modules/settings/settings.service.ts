@@ -1,15 +1,17 @@
 import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../../shared/prisma/prisma.service";
+import { TenantPrismaService } from "../../shared/tenant";
 
 @Injectable()
 export class SettingsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: TenantPrismaService) { }
 
     async getCompanySettings() {
-        let settings = await this.prisma.companySettings.findFirst();
+        // TenantPrismaService auto-filters by tenant
+        let settings = await this.prisma.companySettings.findFirst({});
         if (!settings) {
+            // Create default settings for this tenant
             settings = await this.prisma.companySettings.create({
-                data: { id: "default" },
+                data: {} as any, // tenantId is auto-injected
             });
         }
         return settings;
@@ -25,10 +27,16 @@ export class SettingsService {
         taxRate?: number;
         currency?: string;
     }) {
-        return this.prisma.companySettings.upsert({
-            where: { id: "default" },
-            update: data,
-            create: { id: "default", ...data },
+        const existing = await this.prisma.companySettings.findFirst({});
+        if (existing) {
+            return this.prisma.companySettings.update({
+                where: { id: existing.id },
+                data: data as any,
+            });
+        }
+        return this.prisma.companySettings.create({
+            data: data as any,
         });
     }
 }
+

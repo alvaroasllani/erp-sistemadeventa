@@ -2,22 +2,27 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Hexagon, Eye, EyeOff } from "lucide-react";
+import { Hexagon, Eye, EyeOff, AlertCircle } from "lucide-react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { useAuthStore } from "@/stores/authStore";
 
 export default function LoginPage() {
     const router = useRouter();
+    const { login, isLoading, error, clearError } = useAuthStore();
     const [showPassword, setShowPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        setIsLoading(true);
-        // Simulate login
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-        router.push("/");
+        clearError();
+
+        const success = await login(email, password);
+        if (success) {
+            router.push("/");
+        }
     };
 
     return (
@@ -36,6 +41,12 @@ export default function LoginPage() {
                 </CardHeader>
                 <CardContent>
                     <form onSubmit={handleSubmit} className="space-y-4">
+                        {error && (
+                            <div className="flex items-center gap-2 p-3 text-sm text-destructive bg-destructive/10 rounded-md">
+                                <AlertCircle className="h-4 w-4" />
+                                {error}
+                            </div>
+                        )}
                         <div className="space-y-2">
                             <label htmlFor="email" className="text-sm font-medium">
                                 Correo electrónico
@@ -44,7 +55,8 @@ export default function LoginPage() {
                                 id="email"
                                 type="email"
                                 placeholder="usuario@empresa.com"
-                                defaultValue="juan@ferreteria.com"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                                 required
                             />
                         </div>
@@ -57,7 +69,8 @@ export default function LoginPage() {
                                     id="password"
                                     type={showPassword ? "text" : "password"}
                                     placeholder="••••••••"
-                                    defaultValue="password123"
+                                    value={password}
+                                    onChange={(e) => setPassword(e.target.value)}
                                     required
                                     className="pr-10"
                                 />
@@ -79,10 +92,11 @@ export default function LoginPage() {
                         </Button>
                     </form>
                     <p className="mt-4 text-center text-xs text-muted-foreground">
-                        Demo: Las credenciales ya están pre-llenadas
+                        Usa las credenciales de tu cuenta registrada
                     </p>
                 </CardContent>
             </Card>
         </div>
     );
 }
+

@@ -1,9 +1,9 @@
 import { Injectable } from "@nestjs/common";
-import { PrismaService } from "../../shared/prisma/prisma.service";
+import { TenantPrismaService } from "../../shared/tenant";
 
 @Injectable()
 export class FinanceService {
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: TenantPrismaService) { }
 
     async getTransactions(params?: { skip?: number; take?: number; type?: string }) {
         const { skip = 0, take = 20, type } = params || {};

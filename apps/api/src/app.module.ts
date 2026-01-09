@@ -7,6 +7,7 @@ import { FinanceModule } from "./modules/finance/finance.module";
 import { ReportsModule } from "./modules/reports/reports.module";
 import { SettingsModule } from "./modules/settings/settings.module";
 import { PrismaModule } from "./shared/prisma/prisma.module";
+import { TenantModule } from "./shared/tenant";
 
 @Module({
     imports: [
@@ -14,6 +15,7 @@ import { PrismaModule } from "./shared/prisma/prisma.module";
             isGlobal: true,
         }),
         PrismaModule,
+        TenantModule,
         AuthModule,
         ProductsModule,
         SalesModule,

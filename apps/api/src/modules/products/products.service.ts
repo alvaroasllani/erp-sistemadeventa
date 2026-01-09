@@ -1,20 +1,26 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { PrismaService } from "../../shared/prisma/prisma.service";
+import { TenantPrismaService } from "../../shared/tenant";
 import { CreateProductDto, UpdateProductDto } from "./dto/product.dto";
 import { Prisma } from "@prisma/client";
 
+/**
+ * ProductsService - Tenant-aware product management
+ * 
+ * Uses TenantPrismaService which automatically filters all queries by tenantId.
+ * No manual tenant filtering needed - the service handles it automatically.
+ */
 @Injectable()
 export class ProductsService {
-    constructor(private prisma: PrismaService) { }
+    constructor(private prisma: TenantPrismaService) { }
 
     async findAll(params?: {
         skip?: number;
         take?: number;
         search?: string;
-        category?: string;
+        categoryId?: string;
         stockStatus?: string;
     }) {
-        const { skip = 0, take = 20, search, category, stockStatus } = params || {};
+        const { skip = 0, take = 20, search, categoryId, stockStatus } = params || {};
 
         const where: Prisma.ProductWhereInput = {};
 
@@ -25,8 +31,8 @@ export class ProductsService {
             ];
         }
 
-        if (category && category !== "all") {
-            where.category = category as Prisma.EnumProductCategoryFilter;
+        if (categoryId && categoryId !== "all") {
+            where.categoryId = categoryId;
         }
 
         if (stockStatus === "low") {
@@ -35,12 +41,18 @@ export class ProductsService {
             where.stock = 0;
         }
 
+        // TenantPrismaService auto-adds tenantId filter
         const [products, total] = await Promise.all([
             this.prisma.product.findMany({
                 where,
                 skip,
                 take,
                 orderBy: { createdAt: "desc" },
+                include: {
+                    category: {
+                        select: { id: true, name: true, color: true },
+                    },
+                },
             }),
             this.prisma.product.count({ where }),
         ]);
@@ -59,6 +71,11 @@ export class ProductsService {
     async findOne(id: string) {
         const product = await this.prisma.product.findUnique({
             where: { id },
+            include: {
+                category: {
+                    select: { id: true, name: true, color: true },
+                },
+            },
         });
 
         if (!product) {
@@ -69,21 +86,32 @@ export class ProductsService {
     }
 
     async create(data: CreateProductDto) {
+        // TenantPrismaService auto-adds tenantId via extension
         return this.prisma.product.create({
-            data,
+            data: data as any, // Type assertion needed due to Prisma extension
+            include: {
+                category: {
+                    select: { id: true, name: true, color: true },
+                },
+            },
         });
     }
 
     async update(id: string, data: UpdateProductDto) {
-        await this.findOne(id); // Check if exists
+        await this.findOne(id); // Check if exists (and belongs to tenant)
         return this.prisma.product.update({
             where: { id },
             data,
+            include: {
+                category: {
+                    select: { id: true, name: true, color: true },
+                },
+            },
         });
     }
 
     async remove(id: string) {
-        await this.findOne(id); // Check if exists
+        await this.findOne(id); // Check if exists (and belongs to tenant)
         return this.prisma.product.delete({
             where: { id },
         });
@@ -96,6 +124,11 @@ export class ProductsService {
                 status: "ACTIVE",
             },
             orderBy: { stock: "asc" },
+            include: {
+                category: {
+                    select: { id: true, name: true, color: true },
+                },
+            },
         });
     }
 
@@ -109,3 +142,4 @@ export class ProductsService {
         });
     }
 }
+

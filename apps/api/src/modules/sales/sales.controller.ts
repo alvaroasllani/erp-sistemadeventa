@@ -3,9 +3,12 @@ import { ApiTags, ApiOperation, ApiBearerAuth } from "@nestjs/swagger";
 import { SalesService } from "./sales.service";
 import { CreateSaleDto } from "./dto/sale.dto";
 import { JwtAuthGuard } from "../auth/guards/jwt-auth.guard";
+import { TenantGuard } from "../../shared/tenant";
 
 @ApiTags("sales")
 @Controller("sales")
+@UseGuards(JwtAuthGuard, TenantGuard)
+@ApiBearerAuth()
 export class SalesController {
     constructor(private readonly salesService: SalesService) { }
 

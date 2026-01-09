@@ -1,4 +1,4 @@
-// Prisma Database Schema for Nexus ERP
+// Prisma Database Schema for Nexus ERP (Multi-Tenant SaaS)
 generator client {
   provider = "prisma-client-js"
 }
@@ -8,9 +8,39 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// ==================== TENANTS (MULTI-TENANCY) ====================
+model Tenant {
+  id        String   @id @default(cuid())
+  name      String                         // "Ferretería El Martillo"
+  slug      String   @unique               // "el-martillo" (for subdomains)
+  plan      PlanType @default(FREE)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations - All data belongs to a tenant
+  users        User[]
+  products     Product[]
+  sales        Sale[]
+  customers    Customer[]
+  transactions Transaction[]
+  settings     CompanySettings?
+  categories   Category[]
+
+  @@map("tenants")
+}
+
+enum PlanType {
+  FREE
+  BASIC
+  PRO
+  ENTERPRISE
+}
+
 // ==================== USERS & AUTH ====================
 model User {
   id        String   @id @default(cuid())
+  tenantId  String
   email     String   @unique
   password  String
   name      String
@@ -20,8 +50,10 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sales Sale[]
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sales  Sale[]
 
+  @@index([tenantId])
   @@map("users")
 }
 
@@ -33,35 +65,47 @@ enum UserRole {
 
 // ==================== PRODUCTS ====================
 model Product {
-  id          String          @id @default(cuid())
-  sku         String          @unique
+  id          String        @id @default(cuid())
+  tenantId    String
+  sku         String
   name        String
   description String?
-  category    ProductCategory
-  costPrice   Decimal         @db.Decimal(10, 2)
-  salePrice   Decimal         @db.Decimal(10, 2)
-  stock       Int             @default(0)
-  minStock    Int             @default(5)
-  status      ProductStatus   @default(ACTIVE)
+  categoryId  String?
+  costPrice   Decimal       @db.Decimal(10, 2)
+  salePrice   Decimal       @db.Decimal(10, 2)
+  stock       Int           @default(0)
+  minStock    Int           @default(5)
+  status      ProductStatus @default(ACTIVE)
   image       String?
-  createdAt   DateTime        @default(now())
-  updatedAt   DateTime        @updatedAt
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
 
+  tenant    Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  category  Category? @relation(fields: [categoryId], references: [id])
   saleItems SaleItem[]
 
+  @@unique([tenantId, sku])
+  @@index([tenantId])
   @@map("products")
 }
 
-enum ProductCategory {
-  HERRAMIENTAS
-  PINTURAS
-  PLOMERIA
-  ELECTRICIDAD
-  FERRETERIA_GENERAL
-  CONSTRUCCION
-  JARDINERIA
-  SEGURIDAD
+// ==================== CATEGORIES (Dynamic per Tenant) ====================
+model Category {
+  id        String   @id @default(cuid())
+  tenantId  String
+  name      String
+  color     String   @default("#6366f1")
+  createdAt DateTime @default(now())
+
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  products Product[]
+
+  @@unique([tenantId, name])
+  @@index([tenantId])
+  @@map("categories")
 }
+
+
 
 enum ProductStatus {
   ACTIVE
@@ -71,6 +115,7 @@ enum ProductStatus {
 // ==================== SALES ====================
 model Sale {
   id            String        @id @default(cuid())
+  tenantId      String
   subtotal      Decimal       @db.Decimal(10, 2)
   tax           Decimal       @db.Decimal(10, 2)
   total         Decimal       @db.Decimal(10, 2)
@@ -81,10 +126,12 @@ model Sale {
   createdAt     DateTime      @default(now())
   updatedAt     DateTime      @updatedAt
 
+  tenant   Tenant     @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user     User?      @relation(fields: [userId], references: [id])
   customer Customer?  @relation(fields: [customerId], references: [id])
   items    SaleItem[]
 
+  @@index([tenantId])
   @@map("sales")
 }
 
@@ -119,6 +166,7 @@ enum SaleStatus {
 // ==================== CUSTOMERS ====================
 model Customer {
   id        String   @id @default(cuid())
+  tenantId  String
   name      String
   email     String?
   phone     String?
@@ -127,14 +175,17 @@ model Customer {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sales Sale[]
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  sales  Sale[]
 
+  @@index([tenantId])
   @@map("customers")
 }
 
 // ==================== TRANSACTIONS (FINANCE) ====================
 model Transaction {
   id          String          @id @default(cuid())
+  tenantId    String
   type        TransactionType
   description String
   amount      Decimal         @db.Decimal(10, 2)
@@ -142,6 +193,9 @@ model Transaction {
   reference   String?
   createdAt   DateTime        @default(now())
 
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
   @@map("transactions")
 }
 
@@ -153,8 +207,9 @@ enum TransactionType {
 
 // ==================== COMPANY SETTINGS ====================
 model CompanySettings {
-  id       String  @id @default("default")
-  name     String  @default("Ferretería Express")
+  id       String  @id @default(cuid())
+  tenantId String  @unique
+  name     String  @default("Mi Negocio")
   rnc      String?
   address  String?
   phone    String?
@@ -162,6 +217,8 @@ model CompanySettings {
   logo     String?
   taxRate  Decimal @default(0.18) @db.Decimal(5, 4)
   currency String  @default("DOP")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("company_settings")
 }

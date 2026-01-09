@@ -1,4 +1,5 @@
-import { Injectable, BadRequestException } from "@nestjs/common";
+import { Injectable, BadRequestException, ForbiddenException } from "@nestjs/common";
+import { TenantPrismaService } from "../../shared/tenant";
 import { PrismaService } from "../../shared/prisma/prisma.service";
 import { ProductsService } from "../products/products.service";
 import { CreateSaleDto } from "./dto/sale.dto";
@@ -6,11 +7,18 @@ import { CreateSaleDto } from "./dto/sale.dto";
 @Injectable()
 export class SalesService {
     constructor(
-        private prisma: PrismaService,
+        private tenantPrisma: TenantPrismaService,
+        private prisma: PrismaService, // For $transaction support
         private productsService: ProductsService
     ) { }
 
     async create(data: CreateSaleDto, userId?: string) {
+        // Get tenantId for manual injection in transaction
+        const tenantId = this.tenantPrisma.getTenantId();
+        if (!tenantId) {
+            throw new ForbiddenException("Tenant no identificado");
+        }
+
         // Get products and calculate totals
         const itemsWithProducts = await Promise.all(
             data.items.map(async (item) => {
@@ -27,8 +35,8 @@ export class SalesService {
             })
         );
 
-        // Get tax rate from settings
-        const settings = await this.prisma.companySettings.findFirst();
+        // Get tax rate from settings (tenant-filtered)
+        const settings = await this.tenantPrisma.companySettings.findFirst({});
         const taxRate = settings?.taxRate?.toNumber() || 0.18;
 
         // Calculate totals
@@ -39,11 +47,12 @@ export class SalesService {
         const tax = subtotal * taxRate;
         const total = subtotal + tax;
 
-        // Create sale with items in transaction
+        // Create sale with items in transaction (with manual tenantId injection)
         const sale = await this.prisma.$transaction(async (tx) => {
-            // Create sale
+            // Create sale with tenantId
             const newSale = await tx.sale.create({
                 data: {
+                    tenantId, // Manual injection
                     subtotal,
                     tax,
                     total,
@@ -64,17 +73,18 @@ export class SalesService {
                 include: { items: true },
             });
 
-            // Update stock for each product
+            // Update stock for each product (verify tenant ownership)
             for (const item of itemsWithProducts) {
                 await tx.product.update({
-                    where: { id: item.productId },
+                    where: { id: item.productId, tenantId }, // Verify tenant
                     data: { stock: { decrement: item.quantity } },
                 });
             }
 
-            // Create transaction record
+            // Create transaction record with tenantId
             await tx.transaction.create({
                 data: {
+                    tenantId, // Manual injection
                     type: "SALE",
                     description: `Venta #${newSale.id.slice(-6).toUpperCase()}`,
                     amount: total,
@@ -99,15 +109,16 @@ export class SalesService {
             if (endDate) where.createdAt.lte = endDate;
         }
 
+        // TenantPrismaService auto-filters by tenant
         const [sales, total] = await Promise.all([
-            this.prisma.sale.findMany({
+            this.tenantPrisma.sale.findMany({
                 where,
                 skip,
                 take,
                 include: { items: true, user: { select: { name: true } } },
                 orderBy: { createdAt: "desc" },
             }),
-            this.prisma.sale.count({ where }),
+            this.tenantPrisma.sale.count({ where }),
         ]);
 
         return {
@@ -122,7 +133,7 @@ export class SalesService {
     }
 
     async findOne(id: string) {
-        return this.prisma.sale.findUnique({
+        return this.tenantPrisma.sale.findUnique({
             where: { id },
             include: { items: true, user: { select: { name: true } }, customer: true },
         });
@@ -132,12 +143,13 @@ export class SalesService {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
 
+        // Use tenantPrisma for auto-filtered stats
         const [todaySales, todayOrders] = await Promise.all([
-            this.prisma.sale.aggregate({
+            this.tenantPrisma.sale.aggregate({
                 where: { createdAt: { gte: today }, status: "COMPLETED" },
                 _sum: { total: true },
             }),
-            this.prisma.sale.count({
+            this.tenantPrisma.sale.count({
                 where: { createdAt: { gte: today }, status: "COMPLETED" },
             }),
         ]);
@@ -148,3 +160,4 @@ export class SalesService {
         };
     }
 }
+
