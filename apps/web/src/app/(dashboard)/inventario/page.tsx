@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Plus } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Plus, Loader2 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { ProductFilters } from "@/components/inventory/ProductFilters";
 import { ProductTable } from "@/components/inventory/ProductTable";
-import { mockProducts } from "@/lib/mock-data";
+import { productsApi, Product } from "@/lib/api-client";
 import type { ProductFilters as ProductFiltersType } from "@/types/product.types";
 import { ITEMS_PER_PAGE } from "@/lib/constants";
 
@@ -17,48 +17,56 @@ export default function InventarioPage() {
         stockStatus: "all",
     });
     const [currentPage, setCurrentPage] = useState(1);
+    const [products, setProducts] = useState<Product[]>([]);
+    const [totalProducts, setTotalProducts] = useState(0);
+    const [isLoading, setIsLoading] = useState(true);
 
-    // Filter products
-    const filteredProducts = useMemo(() => {
-        return mockProducts.filter((product) => {
-            // Search filter
-            if (filters.search) {
-                const searchLower = filters.search.toLowerCase();
-                const matchesSearch =
-                    product.name.toLowerCase().includes(searchLower) ||
-                    product.sku.toLowerCase().includes(searchLower);
-                if (!matchesSearch) return false;
-            }
+    // Load products from API
+    const loadProducts = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await productsApi.getAll({
+                page: currentPage,
+                limit: ITEMS_PER_PAGE,
+                search: filters.search || undefined,
+                stockStatus: filters.stockStatus !== "all" ? filters.stockStatus : undefined,
+            });
+            setProducts(response.data);
+            setTotalProducts(response.meta.total);
+        } catch (error) {
+            console.error("Error loading products:", error);
+            setProducts([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentPage, filters.search, filters.stockStatus]);
 
-            // Category filter
-            if (filters.category !== "all" && product.category !== filters.category) {
-                return false;
-            }
-
-            // Stock filter
-            if (filters.stockStatus === "low" && product.stock >= 5) {
-                return false;
-            }
-            if (filters.stockStatus === "out" && product.stock > 0) {
-                return false;
-            }
-
-            return true;
-        });
-    }, [filters]);
+    useEffect(() => {
+        loadProducts();
+    }, [loadProducts]);
 
     // Pagination
-    const totalPages = Math.ceil(filteredProducts.length / ITEMS_PER_PAGE);
-    const paginatedProducts = useMemo(() => {
-        const start = (currentPage - 1) * ITEMS_PER_PAGE;
-        return filteredProducts.slice(start, start + ITEMS_PER_PAGE);
-    }, [filteredProducts, currentPage]);
+    const totalPages = Math.ceil(totalProducts / ITEMS_PER_PAGE);
 
     // Reset page when filters change
     const handleFiltersChange = (newFilters: ProductFiltersType) => {
         setFilters(newFilters);
         setCurrentPage(1);
     };
+
+    // Map API products to table format
+    const tableProducts = products.map(p => ({
+        id: p.id,
+        sku: p.sku,
+        name: p.name,
+        category: p.category?.name || "Sin categoría",
+        costPrice: typeof p.costPrice === 'number' ? p.costPrice : Number(p.costPrice),
+        salePrice: typeof p.salePrice === 'number' ? p.salePrice : Number(p.salePrice),
+        stock: p.stock,
+        minStock: p.minStock,
+        status: p.status,
+        image: p.image,
+    }));
 
     return (
         <div className="space-y-6">
@@ -78,16 +86,23 @@ export default function InventarioPage() {
 
             {/* Results count */}
             <p className="text-sm text-muted-foreground">
-                Mostrando {paginatedProducts.length} de {filteredProducts.length} productos
+                {isLoading ? "Cargando..." : `Mostrando ${products.length} de ${totalProducts} productos`}
             </p>
 
             {/* Table */}
-            <ProductTable
-                products={paginatedProducts}
-                currentPage={currentPage}
-                totalPages={totalPages}
-                onPageChange={setCurrentPage}
-            />
+            {isLoading ? (
+                <div className="flex items-center justify-center h-64">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+            ) : (
+                <ProductTable
+                    products={tableProducts}
+                    currentPage={currentPage}
+                    totalPages={totalPages}
+                    onPageChange={setCurrentPage}
+                />
+            )}
         </div>
     );
 }
+

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
     Plus,
     ArrowUpRight,
@@ -9,12 +9,13 @@ import {
     TrendingUp,
     TrendingDown,
     Search,
-    Filter
+    Filter,
+    Loader2
 } from "lucide-react";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -27,47 +28,38 @@ import {
 } from "@/components/ui/table";
 import { KPICard } from "@/components/dashboard/KPICard";
 import { formatCurrency, formatRelativeTime, cn } from "@/lib/utils";
+import { financeApi, Transaction } from "@/lib/api-client";
 
-// Mock Data
+// KPI Stats (will be connected to dashboardStats later)
 const FINANCE_STATS = [
     {
         title: "Ingresos (Hoy)",
-        value: formatCurrency(7845),
-        change: "+12.5%",
+        value: formatCurrency(0),
+        change: "+0%",
         changeType: "positive" as const,
         icon: TrendingUp,
         variant: "default" as const,
     },
     {
         title: "Egresos (Hoy)",
-        value: formatCurrency(4700),
-        change: "+5.2%",
+        value: formatCurrency(0),
+        change: "+0%",
         changeType: "negative" as const,
         icon: TrendingDown,
-        variant: "danger" as const, // Custom styling logic handled below if needed, or KPICard supports it? KPICard supports variant.
+        variant: "danger" as const,
     },
     {
         title: "Balance Total",
-        value: formatCurrency(31450),
+        value: formatCurrency(0),
         subtitle: "En todas las cuentas",
         icon: Wallet,
         variant: "default" as const,
     },
 ];
 
-const TRANSACTIONS = [
-    { id: "TRX-9821", type: "income", description: "Venta #1234 - Cliente General", amount: 1250, date: new Date(Date.now() - 1000 * 60 * 9), status: "completed", method: "Efectivo" },
-    { id: "TRX-9820", type: "expense", description: "Compra proveedor - Pinturas", amount: 3500, date: new Date(Date.now() - 1000 * 60 * 29), status: "completed", method: "Transferencia" },
-    { id: "TRX-9819", type: "income", description: "Venta #1233 - Juan Pérez", amount: 489, date: new Date(Date.now() - 1000 * 60 * 49), status: "completed", method: "QR" },
-    { id: "TRX-9818", type: "income", description: "Venta #1232 - María Lopez", amount: 2150, date: new Date(Date.now() - 1000 * 60 * 60 * 2), status: "completed", method: "Tarjeta" },
-    { id: "TRX-9817", type: "expense", description: "Pago servicios - Electricidad", amount: 1200, date: new Date(Date.now() - 1000 * 60 * 60 * 3), status: "completed", method: "Transferencia" },
-    { id: "TRX-9816", type: "income", description: "Venta #1231 - Cliente General", amount: 756, date: new Date(Date.now() - 1000 * 60 * 60 * 5), status: "completed", method: "Efectivo" },
-    { id: "TRX-9815", type: "refund", description: "Devolución #REF-012 - Pintura mal estado", amount: 189, date: new Date(Date.now() - 1000 * 60 * 60 * 6), status: "completed", method: "Efectivo" },
-    { id: "TRX-9814", type: "income", description: "Venta #1230 - Constructora A1", amount: 3200, date: new Date(Date.now() - 1000 * 60 * 60 * 8), status: "completed", method: "Transferencia" },
-];
-
 function TransactionTypeBadge({ type }: { type: string }) {
     switch (type) {
+        case "SALE":
         case "income":
             return (
                 <div className="flex items-center gap-2">
@@ -77,6 +69,7 @@ function TransactionTypeBadge({ type }: { type: string }) {
                     <span className="font-medium text-foreground">Ingreso</span>
                 </div>
             );
+        case "EXPENSE":
         case "expense":
             return (
                 <div className="flex items-center gap-2">
@@ -86,6 +79,7 @@ function TransactionTypeBadge({ type }: { type: string }) {
                     <span className="font-medium text-foreground">Egreso</span>
                 </div>
             );
+        case "REFUND":
         case "refund":
             return (
                 <div className="flex items-center gap-2">
@@ -102,6 +96,29 @@ function TransactionTypeBadge({ type }: { type: string }) {
 
 export default function FinanzasPage() {
     const [search, setSearch] = useState("");
+    const [transactions, setTransactions] = useState<Transaction[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+
+    const loadTransactions = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await financeApi.getTransactions({ page: currentPage, limit: 10 });
+            setTransactions(response.data);
+            setTotalPages(response.meta.totalPages);
+        } catch (error) {
+            console.error("Error loading transactions:", error);
+            setTransactions([]);
+        } finally {
+            setIsLoading(false);
+        }
+    }, [currentPage]);
+
+    useEffect(() => {
+        loadTransactions();
+    }, [loadTransactions]);
+
 
     return (
         <div className="space-y-6">
@@ -160,59 +177,86 @@ export default function FinanzasPage() {
 
                 <TabsContent value="transactions" className="space-y-4">
                     <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
-                        <Table>
-                            <TableHeader>
-                                <TableRow className="hover:bg-transparent">
-                                    <TableHead className="w-[140px] font-semibold">Tipo</TableHead>
-                                    <TableHead className="font-semibold">Descripción</TableHead>
-                                    <TableHead className="font-semibold">Método</TableHead>
-                                    <TableHead className="font-semibold">Fecha</TableHead>
-                                    <TableHead className="text-right font-semibold">Monto</TableHead>
-                                    <TableHead className="text-right font-semibold">Estado</TableHead>
-                                </TableRow>
-                            </TableHeader>
-                            <TableBody>
-                                {TRANSACTIONS.map((trx) => (
-                                    <TableRow key={trx.id} className="hover:bg-muted/50 transition-colors cursor-pointer">
-                                        <TableCell>
-                                            <TransactionTypeBadge type={trx.type} />
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex flex-col">
-                                                <span className="font-medium text-foreground">{trx.description}</span>
-                                                <span className="text-xs text-muted-foreground">{trx.id}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className="text-sm text-foreground">{trx.method}</span>
-                                        </TableCell>
-                                        <TableCell>
-                                            <span className="text-sm text-muted-foreground">{formatRelativeTime(trx.date)}</span>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <span className={cn(
-                                                "font-semibold tabular-nums",
-                                                trx.type === "income" && "text-green-600 dark:text-green-400",
-                                                (trx.type === "expense" || trx.type === "refund") && "text-red-600 dark:text-red-400"
-                                            )}>
-                                                {trx.type === "income" ? "+" : "-"}{formatCurrency(trx.amount)}
-                                            </span>
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900">
-                                                Completado
-                                            </Badge>
-                                        </TableCell>
+                        {isLoading ? (
+                            <div className="flex items-center justify-center h-64">
+                                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            </div>
+                        ) : transactions.length === 0 ? (
+                            <div className="flex items-center justify-center h-64 text-muted-foreground">
+                                No hay transacciones registradas
+                            </div>
+                        ) : (
+                            <Table>
+                                <TableHeader>
+                                    <TableRow className="hover:bg-transparent">
+                                        <TableHead className="w-[140px] font-semibold">Tipo</TableHead>
+                                        <TableHead className="font-semibold">Descripción</TableHead>
+                                        <TableHead className="font-semibold">Método</TableHead>
+                                        <TableHead className="font-semibold">Fecha</TableHead>
+                                        <TableHead className="text-right font-semibold">Monto</TableHead>
+                                        <TableHead className="text-right font-semibold">Estado</TableHead>
                                     </TableRow>
-                                ))}
-                            </TableBody>
-                        </Table>
+                                </TableHeader>
+                                <TableBody>
+                                    {transactions.map((trx) => (
+                                        <TableRow key={trx.id} className="hover:bg-muted/50 transition-colors cursor-pointer">
+                                            <TableCell>
+                                                <TransactionTypeBadge type={trx.type} />
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-foreground">{trx.description}</span>
+                                                    <span className="text-xs text-muted-foreground">{trx.id.slice(-8)}</span>
+                                                </div>
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className="text-sm text-foreground">{trx.method}</span>
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className="text-sm text-muted-foreground">{formatRelativeTime(new Date(trx.createdAt))}</span>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <span className={cn(
+                                                    "font-semibold tabular-nums",
+                                                    trx.type === "SALE" && "text-green-600 dark:text-green-400",
+                                                    (trx.type === "EXPENSE" || trx.type === "REFUND") && "text-red-600 dark:text-red-400"
+                                                )}>
+                                                    {trx.type === "SALE" ? "+" : "-"}{formatCurrency(typeof trx.amount === 'number' ? trx.amount : Number(trx.amount))}
+                                                </span>
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <Badge variant="outline" className="bg-green-500/10 text-green-700 dark:text-green-400 border-green-200 dark:border-green-900">
+                                                    Completado
+                                                </Badge>
+                                            </TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        )}
                     </div>
 
-                    {/* Pagination placeholder */}
+                    {/* Pagination */}
                     <div className="flex items-center justify-end space-x-2 py-2">
-                        <Button variant="outline" size="sm" disabled>Anterior</Button>
-                        <Button variant="outline" size="sm">Siguiente</Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={currentPage <= 1}
+                            onClick={() => setCurrentPage(p => Math.max(1, p - 1))}
+                        >
+                            Anterior
+                        </Button>
+                        <span className="text-sm text-muted-foreground">
+                            Página {currentPage} de {totalPages || 1}
+                        </span>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={currentPage >= totalPages}
+                            onClick={() => setCurrentPage(p => p + 1)}
+                        >
+                            Siguiente
+                        </Button>
                     </div>
                 </TabsContent>
 

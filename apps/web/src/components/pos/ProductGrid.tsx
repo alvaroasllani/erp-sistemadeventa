@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useMemo } from "react";
-import { Search } from "lucide-react";
+import { useState, useEffect, useCallback } from "react";
+import { Search, Loader2 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { ProductCard } from "./ProductCard";
-import { mockProducts } from "@/lib/mock-data";
+import { productsApi, Product } from "@/lib/api-client";
 import { cn } from "@/lib/utils";
 
 interface ProductGridProps {
@@ -13,17 +13,43 @@ interface ProductGridProps {
 
 export function ProductGrid({ className }: ProductGridProps) {
     const [search, setSearch] = useState("");
+    const [products, setProducts] = useState<Product[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const filteredProducts = useMemo(() => {
-        if (!search.trim()) return mockProducts;
-
-        const searchLower = search.toLowerCase();
-        return mockProducts.filter(
-            (product) =>
-                product.name.toLowerCase().includes(searchLower) ||
-                product.sku.toLowerCase().includes(searchLower)
-        );
+    const loadProducts = useCallback(async () => {
+        setIsLoading(true);
+        try {
+            const response = await productsApi.getAll({
+                limit: 100,
+                search: search || undefined
+            });
+            setProducts(response.data);
+        } catch (error) {
+            console.error("Error loading products:", error);
+            setProducts([]);
+        } finally {
+            setIsLoading(false);
+        }
     }, [search]);
+
+    // Debounce search
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            loadProducts();
+        }, 300);
+        return () => clearTimeout(timer);
+    }, [loadProducts]);
+
+    // Map to ProductCard format
+    const productItems = products.map(p => ({
+        id: p.id,
+        sku: p.sku,
+        name: p.name,
+        category: p.category?.name || "Sin categoría",
+        salePrice: typeof p.salePrice === 'number' ? p.salePrice : Number(p.salePrice),
+        stock: p.stock,
+        image: p.image,
+    }));
 
     return (
         <div className={cn("flex flex-col gap-4", className)}>
@@ -42,18 +68,27 @@ export function ProductGrid({ className }: ProductGridProps) {
 
             {/* Products Grid */}
             <div className="flex-1 overflow-auto">
-                <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 pb-4">
-                    {filteredProducts.map((product) => (
-                        <ProductCard key={product.id} product={product} />
-                    ))}
-                </div>
-
-                {filteredProducts.length === 0 && (
-                    <div className="flex h-48 items-center justify-center text-muted-foreground">
-                        No se encontraron productos
+                {isLoading ? (
+                    <div className="flex h-48 items-center justify-center">
+                        <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
+                ) : (
+                    <>
+                        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 pb-4">
+                            {productItems.map((product) => (
+                                <ProductCard key={product.id} product={product} />
+                            ))}
+                        </div>
+
+                        {productItems.length === 0 && (
+                            <div className="flex h-48 items-center justify-center text-muted-foreground">
+                                No se encontraron productos
+                            </div>
+                        )}
+                    </>
                 )}
             </div>
         </div>
     );
 }
+
