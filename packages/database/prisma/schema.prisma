@@ -26,6 +26,7 @@ model Tenant {
   transactions Transaction[]
   settings     CompanySettings?
   categories   Category[]
+  deletedTransactions DeletedTransaction[]
 
   @@map("tenants")
 }
@@ -191,12 +192,29 @@ model Transaction {
   amount      Decimal         @db.Decimal(10, 2)
   method      PaymentMethod?
   reference   String?
+  category    String?
+  deletedAt   DateTime?
   createdAt   DateTime        @default(now())
 
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@index([tenantId])
   @@map("transactions")
+}
+
+model DeletedTransaction {
+  id          String   @id @default(cuid())
+  tenantId    String
+  originalId  String?
+  type        String
+  description String
+  amount      Decimal  @db.Decimal(10, 2)
+  deletedAt   DateTime @default(now())
+  deletedBy   String?
+
+  tenant      Tenant   @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  @@index([tenantId])
+  @@map("deleted_transactions")
 }
 
 enum TransactionType {

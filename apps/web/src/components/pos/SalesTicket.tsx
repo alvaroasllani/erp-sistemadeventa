@@ -5,7 +5,7 @@ import { ShoppingCart, Banknote, CreditCard, QrCode } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { ScrollArea } from "@/components/ui/scroll-area";
-import { TicketItem } from "./TicketItem";
+import { CartItem } from "./CartItem";
 import { PaymentModal } from "./PaymentModal";
 import { useCartStore } from "@/stores/cartStore";
 import { formatCurrency, cn } from "@/lib/utils";
@@ -48,31 +48,38 @@ export function SalesTicket() {
         <>
             <div className="flex h-full flex-col bg-card border-l border-border shadow-xl">
                 {/* Header */}
-                <div className="p-5 pb-3 border-b border-border">
+                <div className="p-4 border-b border-border bg-slate-50/50">
                     <div className="flex items-center justify-between">
-                        <h2 className="text-lg font-semibold text-foreground">Ticket de Venta</h2>
-                        <span className="text-sm font-medium text-primary">
-                            {itemCount} {itemCount === 1 ? "producto" : "productos"}
+                        <div className="flex items-center gap-2">
+                            <div className="h-8 w-8 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                                <ShoppingCart className="h-4 w-4" />
+                            </div>
+                            <h2 className="text-lg font-bold text-foreground">Ticket Actual</h2>
+                        </div>
+                        <span className="text-xs font-medium px-2 py-1 bg-white border rounded-full text-slate-600">
+                            {itemCount} {itemCount === 1 ? "item" : "items"}
                         </span>
                     </div>
                 </div>
 
                 {/* Items List - Scrolleable */}
-                <div className="flex-1 overflow-hidden">
+                <div className="flex-1 overflow-hidden bg-white/50">
                     {items.length > 0 ? (
-                        <ScrollArea className="h-full px-5 py-3">
+                        <ScrollArea className="h-full px-4 py-2">
                             <div className="space-y-0">
                                 {items.map((item) => (
-                                    <TicketItem key={item.product.id} item={item} />
+                                    <CartItem key={item.product.id} item={item} />
                                 ))}
                             </div>
                         </ScrollArea>
                     ) : (
-                        <div className="flex h-full flex-col items-center justify-center gap-3 text-muted-foreground px-5">
-                            <ShoppingCart className="h-16 w-16 opacity-30" />
-                            <div className="text-center">
-                                <p className="font-medium text-foreground">Carrito vacío</p>
-                                <p className="text-sm">Selecciona productos para agregar</p>
+                        <div className="flex h-full flex-col items-center justify-center gap-4 text-muted-foreground px-5 opacity-60">
+                            <div className="h-24 w-24 bg-muted/40 rounded-full flex items-center justify-center">
+                                <ShoppingCart className="h-10 w-10 opacity-30" />
+                            </div>
+                            <div className="text-center space-y-1">
+                                <p className="font-medium text-foreground text-lg">Carrito vacío</p>
+                                <p className="text-sm">Agrega productos del catálogo</p>
                             </div>
                         </div>
                     )}

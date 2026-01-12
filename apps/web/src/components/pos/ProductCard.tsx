@@ -1,33 +1,13 @@
 "use client";
 
+import { Package } from "lucide-react";
 import { formatCurrency, cn } from "@/lib/utils";
 import { useCartStore } from "@/stores/cartStore";
 import type { Product } from "@/types/product.types";
+import { Badge } from "@/components/ui/badge";
 
 interface ProductCardProps {
     product: Product;
-}
-
-// Color palette for product initials fallback
-const categoryColors: Record<string, string> = {
-    "Herramientas": "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300",
-    "Pinturas": "bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300",
-    "Electricidad": "bg-yellow-100 dark:bg-yellow-900/30 text-yellow-700 dark:text-yellow-300",
-    "Plomería": "bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300",
-    "Seguridad": "bg-red-100 dark:bg-red-900/30 text-red-700 dark:text-red-300",
-    "Ferretería General": "bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300",
-};
-
-function getProductInitials(name: string): string {
-    return name
-        .split(" ")
-        .slice(0, 2)
-        .map(word => word.charAt(0).toUpperCase())
-        .join("");
-}
-
-function getCategoryColor(category: string): string {
-    return categoryColors[category] || "bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300";
 }
 
 export function ProductCard({ product }: ProductCardProps) {
@@ -43,49 +23,45 @@ export function ProductCard({ product }: ProductCardProps) {
     return (
         <div
             className={cn(
-                "relative overflow-hidden rounded-xl border border-border bg-card transition-all duration-200 cursor-pointer group",
+                "group relative flex flex-col justify-between overflow-hidden rounded-lg border border-border bg-card p-3 transition-all duration-200 cursor-pointer h-[120px]", // Fixed height for consistency
                 isOutOfStock
-                    ? "opacity-50 grayscale cursor-not-allowed"
-                    : "hover:-translate-y-1 hover:shadow-md hover:border-primary"
+                    ? "opacity-60 grayscale cursor-not-allowed bg-muted/50"
+                    : "hover:shadow-md hover:border-primary/50 active:scale-95 hover:bg-muted/20"
             )}
             onClick={handleClick}
         >
-            <div className="p-4">
-                <div className="flex flex-col items-center gap-3">
-                    {/* Product Image/Initials Fallback */}
-                    <div className={cn(
-                        "flex h-16 w-16 items-center justify-center rounded-xl",
-                        product.image ? "bg-muted" : getCategoryColor(product.category)
-                    )}>
-                        {product.image ? (
-                            <img
-                                src={product.image}
-                                alt={product.name}
-                                className="h-full w-full object-cover rounded-xl"
-                            />
-                        ) : (
-                            <span className="text-xl font-bold">
-                                {getProductInitials(product.name)}
-                            </span>
-                        )}
-                    </div>
+            {/* Stock Status Overlay */}
+            {isOutOfStock && (
+                <div className="absolute inset-0 z-10 flex items-center justify-center bg-background/50 backdrop-blur-[1px]">
+                    <Badge variant="destructive" className="font-bold shadow-sm">AGOTADO</Badge>
+                </div>
+            )}
 
-                    {/* Product Info */}
-                    <div className="w-full text-center">
-                        <p className="text-sm font-semibold text-foreground leading-tight line-clamp-2 min-h-[2.5rem]">
-                            {product.name}
-                        </p>
+            {/* Header: Name */}
+            <div className="flex-1 min-h-0">
+                <h3 className="text-sm font-medium leading-tight text-foreground line-clamp-2 pr-1" title={product.name}>
+                    {product.name}
+                </h3>
+            </div>
 
-                        {isOutOfStock ? (
-                            <span className="inline-flex items-center mt-2 px-2 py-1 rounded-full text-xs font-bold bg-destructive/10 text-destructive">
-                                AGOTADO
-                            </span>
-                        ) : (
-                            <p className="mt-1 text-lg font-bold text-primary">
-                                {formatCurrency(product.salePrice)}
-                            </p>
-                        )}
+            {/* Body: Icon/Image (Optional, subtle if no image) */}
+            <div className="flex-1 flex items-center justify-center py-1">
+                {product.image ? (
+                    <img src={product.image} alt="" className="h-10 w-10 object-contain mix-blend-multiply dark:mix-blend-normal" />
+                ) : (
+                    <div className="p-2 rounded-full bg-muted/30 text-muted-foreground/40 group-hover:text-primary/40 group-hover:bg-primary/5 transition-colors">
+                        <Package size={20} strokeWidth={1.5} />
                     </div>
+                )}
+            </div>
+
+            {/* Footer: Price */}
+            <div className="mt-auto pt-1 flex items-end justify-between border-t border-border/30">
+                <div className="text-xs text-muted-foreground font-mono">
+                    {product.sku}
+                </div>
+                <div className="text-base font-bold text-primary tracking-tight">
+                    {formatCurrency(product.salePrice)}
                 </div>
             </div>
         </div>

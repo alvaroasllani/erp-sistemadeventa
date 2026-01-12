@@ -1,20 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { Check, Printer, Banknote, AlertCircle } from "lucide-react";
-import {
-    Dialog,
-    DialogContent,
-    DialogHeader,
-    DialogTitle,
-    DialogDescription,
-} from "@/components/ui/dialog";
+import { useEffect, useState, useMemo } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/stores/cartStore";
-import { formatCurrency } from "@/lib/utils";
-import { salesApi, Sale, ApiError } from "@/lib/api-client";
+import { formatCurrency, cn } from "@/lib/utils";
+import { Banknote, ArrowRight, CheckCircle2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { salesApi } from "@/lib/api-client";
+import { toast } from "sonner";
 
 interface PaymentModalProps {
     open: boolean;
@@ -22,216 +17,252 @@ interface PaymentModalProps {
 }
 
 export function PaymentModal({ open, onOpenChange }: PaymentModalProps) {
-    const { items, paymentMethod, getTotal, clearCart } = useCartStore();
-    const total = getTotal();
-    const [amountReceived, setAmountReceived] = useState<string>("");
+    const { items, getTotal, clearCart, paymentMethod } = useCartStore();
+    const [amountReceived, setAmountReceived] = useState("");
     const [isProcessing, setIsProcessing] = useState(false);
-    const [isCompleted, setIsCompleted] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [completedSale, setCompletedSale] = useState<Sale | null>(null);
+    const router = useRouter();
+    const total = getTotal();
 
-    const receivedNum = parseFloat(amountReceived) || 0;
-    const change = receivedNum - total;
+    // Reset state when modal opens
+    useEffect(() => {
+        if (open) {
+            setAmountReceived("");
+            setIsProcessing(false);
+        }
+    }, [open]);
 
-    const handlePayment = async () => {
+    // Handle initial focus
+    useEffect(() => {
+        if (open) {
+            const timer = setTimeout(() => {
+                const input = document.getElementById("amount-received-input");
+                input?.focus();
+            }, 100);
+            return () => clearTimeout(timer);
+        }
+    }, [open]);
+
+    const receivedValue = parseFloat(amountReceived) || 0;
+    const change = receivedValue - total;
+    const isSufficient = receivedValue >= total;
+    const remaining = total - receivedValue;
+
+    const handleQuickCash = (amount: number) => {
+        setAmountReceived(amount.toString());
+        document.getElementById("amount-received-input")?.focus();
+    };
+
+    const handleClear = () => {
+        setAmountReceived("");
+        document.getElementById("amount-received-input")?.focus();
+    };
+
+    const handleAddBill = (bill: number) => {
+        const currentCheck = parseFloat(amountReceived) || 0;
+        const newValue = currentCheck + bill;
+        // Fix floating point issues (e.g. 0.1 + 0.2 = 0.300000004)
+        setAmountReceived(newValue.toFixed(2).replace(/\.00$/, ""));
+        document.getElementById("amount-received-input")?.focus();
+    };
+
+    const handleConfirm = async () => {
+        if (!isSufficient) return;
+
         setIsProcessing(true);
-        setError(null);
-
         try {
-            // Map cart items to API format
-            const saleItems = items.map(item => ({
-                productId: item.product.id,
-                quantity: item.quantity,
-            }));
+            // Prepare payload
+            const saleData = {
+                items: items.map(item => ({
+                    productId: item.product.id,
+                    quantity: item.quantity
+                })),
+                paymentMethod: paymentMethod, // Backend expects lowercase "cash" | "card" | "qr"
+                customerId: undefined
+            };
 
-            // paymentMethod is already in correct format: "cash", "card", "qr"
-            const sale = await salesApi.create({
-                items: saleItems,
-                paymentMethod: paymentMethod,
-            });
+            // Call API
+            await salesApi.create(saleData);
 
-            setCompletedSale(sale);
-            setIsCompleted(true);
-        } catch (err) {
-            console.error("Error processing sale:", err);
-            if (err instanceof ApiError) {
-                setError(err.message);
-            } else {
-                setError("Error al procesar la venta. Intenta de nuevo.");
-            }
+            // Success feedback
+            toast.success("Venta registrada correctamente");
+
+            clearCart();
+            onOpenChange(false);
+        } catch (error) {
+            console.error("Payment failed", error);
+            toast.error("Error al procesar la venta");
         } finally {
             setIsProcessing(false);
         }
     };
 
-    const handleClose = () => {
-        if (isCompleted) {
-            clearCart();
+    // Keyboard handling for Enter
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === "Enter" && isSufficient) {
+            e.preventDefault();
+            handleConfirm();
         }
-        setIsCompleted(false);
-        setAmountReceived("");
-        setError(null);
-        setCompletedSale(null);
-        onOpenChange(false);
     };
-
-    const handlePrint = () => {
-        // In a real app, this would trigger receipt printing
-        console.log("Printing receipt for sale:", completedSale?.id);
-        handleClose();
-    };
-
-    const quickAmounts = [500, 1000, 2000, 5000];
-
-    if (isCompleted) {
-        return (
-            <Dialog open={open} onOpenChange={handleClose}>
-                <DialogContent className="sm:max-w-md">
-                    <div className="flex flex-col items-center gap-4 py-8">
-                        <div className="flex h-16 w-16 items-center justify-center rounded-full bg-green-100">
-                            <Check className="h-8 w-8 text-green-600" />
-                        </div>
-                        <div className="text-center">
-                            <h2 className="text-xl font-semibold">¡Venta Completada!</h2>
-                            <p className="mt-1 text-muted-foreground">
-                                Total: {formatCurrency(total)}
-                            </p>
-                            {paymentMethod === "cash" && change > 0 && (
-                                <p className="mt-2 text-lg font-bold text-primary">
-                                    Cambio: {formatCurrency(change)}
-                                </p>
-                            )}
-                        </div>
-                        <div className="flex w-full gap-2 mt-4">
-                            <Button variant="outline" className="flex-1" onClick={handlePrint}>
-                                <Printer className="mr-2 h-4 w-4" />
-                                Imprimir
-                            </Button>
-                            <Button className="flex-1" onClick={handleClose}>
-                                Nueva Venta
-                            </Button>
-                        </div>
-                    </div>
-                </DialogContent>
-            </Dialog>
-        );
-    }
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Procesar Pago</DialogTitle>
-                    <DialogDescription>
-                        {paymentMethod === "cash" && "Ingresa el monto recibido"}
-                        {paymentMethod === "card" && "Confirma el pago con tarjeta"}
-                        {paymentMethod === "qr" && "Escanea el código QR para pagar"}
-                    </DialogDescription>
-                </DialogHeader>
+            <DialogContent className="sm:max-w-md gap-0 p-0 overflow-hidden bg-background border-border shadow-2xl">
+                {/* 1. Header & Total */}
+                <div className="flex flex-col items-center justify-center pt-8 pb-6 px-6 bg-muted/30">
+                    <DialogTitle className="text-lg font-medium text-muted-foreground mb-4">
+                        Confirmar Pago
+                    </DialogTitle>
+                    <div className="text-4xl sm:text-5xl font-black text-foreground tracking-tight tabular-nums">
+                        {formatCurrency(total)}
+                    </div>
+                    <p className="text-sm font-medium text-muted-foreground mt-2">
+                        Total de la orden
+                    </p>
+                </div>
 
-                <div className="space-y-4 py-4">
-                    {/* Error Message */}
-                    {error && (
-                        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive">
-                            <AlertCircle className="h-4 w-4" />
-                            <span className="text-sm">{error}</span>
+                <div className="px-6 py-6 space-y-8">
+                    {/* 2. Input de "Monto Recibido" */}
+                    <div className="space-y-6">
+                        <div className="relative flex items-center justify-center">
+                            <span className="absolute left-8 top-1/2 -translate-y-1/2 text-2xl font-medium text-muted-foreground/50">
+                                Bs
+                            </span>
+                            <Input
+                                id="amount-received-input"
+                                type="number"
+                                inputMode="decimal"
+                                placeholder="0.00"
+                                className={cn(
+                                    "h-20 text-center text-4xl font-bold bg-transparent border-none shadow-none focus-visible:ring-0 focus-visible:ring-offset-0 px-16",
+                                    "placeholder:text-muted-foreground/20",
+                                    isSufficient ? "text-foreground" : "text-amber-600 dark:text-amber-500"
+                                )}
+                                value={amountReceived}
+                                onChange={(e) => setAmountReceived(e.target.value)}
+                                onKeyDown={handleKeyDown}
+                                autoFocus
+                            />
+                            {/* Underline */}
+                            <div className={cn(
+                                "absolute bottom-2 left-10 right-10 h-0.5 rounded-full transition-colors duration-300",
+                                isSufficient ? "bg-primary/20" : "bg-amber-500/30"
+                            )} />
                         </div>
-                    )}
 
-                    {/* Total */}
-                    <div className="rounded-lg bg-muted p-4 text-center">
-                        <p className="text-sm text-muted-foreground">Total a pagar</p>
-                        <p className="text-3xl font-bold text-primary">
-                            {formatCurrency(total)}
-                        </p>
+                        {/* 3. Feedback de "Cambio" */}
+                        <div className="flex justify-center">
+                            {amountReceived === "" ? (
+                                <div className="h-10" />
+                            ) : !isSufficient ? (
+                                <div className="animate-in fade-in slide-in-from-top-2 flex items-center gap-2 px-4 py-2 rounded-full bg-amber-50 dark:bg-amber-950/30 text-amber-600 dark:text-amber-500 font-medium">
+                                    <span className="text-sm">Faltan</span>
+                                    <span className="text-lg font-bold tabular-nums">
+                                        {formatCurrency(remaining)}
+                                    </span>
+                                </div>
+                            ) : (
+                                <div className="animate-in zoom-in-50 duration-300 flex flex-col items-center">
+                                    <span className="text-sm font-medium text-muted-foreground mb-1">Cambio a devolver</span>
+                                    <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+                                        <CheckCircle2 className="w-6 h-6" strokeWidth={3} />
+                                        <span className="text-3xl font-black tabular-nums tracking-tight">
+                                            {formatCurrency(change)}
+                                        </span>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
                     </div>
 
-                    {/* Cash Payment */}
-                    {paymentMethod === "cash" && (
-                        <>
-                            <div className="space-y-2">
-                                <label className="text-sm font-medium">Monto recibido</label>
-                                <div className="relative">
-                                    <Banknote className="absolute left-3 top-1/2 h-5 w-5 -translate-y-1/2 text-muted-foreground" />
-                                    <Input
-                                        type="number"
-                                        placeholder="0.00"
-                                        value={amountReceived}
-                                        onChange={(e) => setAmountReceived(e.target.value)}
-                                        className="h-12 pl-10 text-xl font-semibold"
-                                        autoFocus
-                                    />
+                    {/* 4. Botones de "Efectivo Rápido" */}
+                    {/* 4. Selector de Billetes (Acumulativo) */}
+                    {/* 4. Selector de Efectivo (Acumulativo) */}
+                    <div className="flex flex-col gap-3">
+                        {/* Botón Exacto */}
+                        <div className="flex gap-2">
+                            <Button
+                                variant="outline"
+                                className="flex-1 h-11 border-primary/20 bg-primary/5 hover:bg-primary/10 text-primary font-bold text-lg mb-1"
+                                onClick={() => handleQuickCash(total)}
+                            >
+                                Exacto {formatCurrency(total)}
+                            </Button>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="h-11 w-11 shrink-0 border-destructive/20 hover:bg-destructive/10 text-destructive"
+                                title="Limpiar monto"
+                                onClick={handleClear}
+                            >
+                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m7 21-4.3-4.3c-1-1-1-2.5 0-3.4l9.6-9.6c1-1 2.5-1 3.4 0l5.6 5.6c1 1 1 2.5 0 3.4L13 21" /><path d="M22 21H7" /><path d="m5 11 9 9" /></svg>
+                            </Button>
+                        </div>
+
+                        <div className="space-y-3">
+                            {/* Monedas */}
+                            <div>
+                                <p className="text-xs text-muted-foreground font-medium mb-1.5 ml-1">Monedas</p>
+                                <div className="grid grid-cols-4 gap-2">
+                                    {[0.50, 1, 2, 5].map((coin) => (
+                                        <Button
+                                            key={coin}
+                                            variant="outline"
+                                            className="h-12 flex flex-col items-center justify-center gap-0 border-border/60 hover:border-amber-500 hover:bg-amber-50 dark:hover:bg-amber-950/30 active:scale-95 transition-all"
+                                            onClick={() => handleAddBill(coin)}
+                                        >
+                                            <span className="text-lg font-bold text-foreground tabular-nums leading-none">
+                                                {coin < 1 ? "50c" : coin}
+                                            </span>
+                                        </Button>
+                                    ))}
                                 </div>
                             </div>
 
-                            {/* Quick Amounts */}
-                            <div className="grid grid-cols-4 gap-2">
-                                {quickAmounts.map((amount) => (
-                                    <Button
-                                        key={amount}
-                                        variant="outline"
-                                        size="sm"
-                                        onClick={() => setAmountReceived(amount.toString())}
-                                    >
-                                        ${amount}
-                                    </Button>
-                                ))}
-                            </div>
-
-                            <Button
-                                variant="outline"
-                                className="w-full"
-                                onClick={() => setAmountReceived(Math.ceil(total).toString())}
-                            >
-                                Monto exacto: {formatCurrency(total)}
-                            </Button>
-
-                            {receivedNum > 0 && (
-                                <>
-                                    <Separator />
-                                    <div className="flex justify-between text-lg">
-                                        <span>Cambio</span>
-                                        <span
-                                            className={change >= 0 ? "text-green-600 font-bold" : "text-destructive"}
+                            {/* Billetes */}
+                            <div>
+                                <p className="text-xs text-muted-foreground font-medium mb-1.5 ml-1">Billetes</p>
+                                <div className="grid grid-cols-5 gap-2">
+                                    {[10, 20, 50, 100, 200].map((bill) => (
+                                        <Button
+                                            key={bill}
+                                            variant="outline"
+                                            className="h-14 flex flex-col items-center justify-center gap-0 border-border/60 hover:border-emerald-500 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 active:scale-95 transition-all"
+                                            onClick={() => handleAddBill(bill)}
                                         >
-                                            {formatCurrency(Math.max(0, change))}
-                                        </span>
-                                    </div>
-                                </>
-                            )}
-                        </>
-                    )}
-
-                    {/* Card Payment */}
-                    {paymentMethod === "card" && (
-                        <div className="text-center text-muted-foreground py-4">
-                            <p>Inserta o acerca la tarjeta al terminal</p>
-                        </div>
-                    )}
-
-                    {/* QR Payment */}
-                    {paymentMethod === "qr" && (
-                        <div className="flex flex-col items-center gap-4 py-4">
-                            <div className="h-48 w-48 bg-muted rounded-lg flex items-center justify-center">
-                                <span className="text-muted-foreground">Código QR</span>
+                                            <span className="text-xs text-muted-foreground font-medium">Bs</span>
+                                            <span className="text-lg font-bold text-foreground tabular-nums leading-none">
+                                                {bill}
+                                            </span>
+                                        </Button>
+                                    ))}
+                                </div>
                             </div>
-                            <p className="text-sm text-muted-foreground">
-                                Escanea con tu aplicación bancaria
-                            </p>
                         </div>
-                    )}
+                    </div>
                 </div>
 
-                <div className="flex gap-2">
-                    <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
+                {/* 5. Footer */}
+                <div className="p-4 bg-muted/30 border-t border-border flex gap-3">
+                    <Button
+                        variant="ghost"
+                        size="lg"
+                        className="flex-1 text-muted-foreground hover:text-foreground h-12"
+                        onClick={() => onOpenChange(false)}
+                    >
                         Cancelar
                     </Button>
                     <Button
-                        className="flex-1"
-                        onClick={handlePayment}
-                        disabled={paymentMethod === "cash" && receivedNum < total}
+                        size="lg"
+                        className="flex-[2] h-12 text-lg font-bold shadow-lg shadow-primary/20"
+                        disabled={!isSufficient || isProcessing}
+                        onClick={handleConfirm}
                     >
-                        {isProcessing ? "Procesando..." : "Confirmar Pago"}
+                        {isProcessing ? "Procesando..." : (
+                            <>
+                                Finalizar Venta
+                                <ArrowRight className="ml-2 w-5 h-5" />
+                            </>
+                        )}
                     </Button>
                 </div>
             </DialogContent>

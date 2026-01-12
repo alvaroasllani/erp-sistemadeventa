@@ -85,6 +85,10 @@ export class TenantPrismaService {
         return this.createTenantProxy(this.prisma.companySettings);
     }
 
+    get deletedTransaction() {
+        return this.createTenantProxy(this.prisma.deletedTransaction);
+    }
+
     // Tenant model is accessible without filtering
     get tenant() {
         return this.prisma.tenant;

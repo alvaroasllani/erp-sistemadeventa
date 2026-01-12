@@ -87,68 +87,79 @@ export function SalesChart() {
     }, []);
 
     return (
-        <Card className="col-span-1 lg:col-span-2">
-            <CardHeader>
-                <CardTitle className="text-lg font-semibold">Ventas vs Gastos</CardTitle>
-                <p className="text-sm text-muted-foreground">
-                    Comparativa de los últimos 7 días
-                </p>
+        <Card className="col-span-1 lg:col-span-8 rounded-xl border-border/60 shadow-sm overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+                <div className="space-y-1">
+                    <CardTitle className="text-lg font-semibold tracking-tight">Ventas vs Gastos</CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                        Resumen financiero de la última semana
+                    </p>
+                </div>
+                {/* Optional: Add a subtle badge or filter here if needed */}
+                <div className="flex gap-2">
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
+                        <div className="size-2 rounded-full bg-[hsl(239,84%,67%)]" />
+                        <span>Ventas</span>
+                    </div>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground bg-muted/50 px-2 py-1 rounded-md">
+                        <div className="size-2 rounded-full bg-[hsl(350,89%,60%)]" />
+                        <span>Gastos</span>
+                    </div>
+                </div>
             </CardHeader>
-            <CardContent className="pl-2">
+            <CardContent className="pl-0 pb-2">
                 {isLoading ? (
-                    <div className="flex items-center justify-center h-[350px]">
+                    <div className="flex items-center justify-center h-[300px]">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
                     </div>
                 ) : (
-                    <ResponsiveContainer width="100%" height={350}>
+                    <ResponsiveContainer width="100%" height={300}>
                         <BarChart
                             data={chartData}
-                            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                            margin={{ top: 10, right: 30, left: 10, bottom: 0 }}
+                            barGap={2}
                         >
                             <CartesianGrid
-                                strokeDasharray="0"
+                                strokeDasharray="3 3"
                                 stroke="hsl(var(--border))"
-                                strokeOpacity={0.5}
+                                strokeOpacity={0.4}
                                 vertical={false}
+                                horizontal={true}
                             />
                             <XAxis
                                 dataKey="day"
-                                tick={{ fill: "currentColor", fontSize: 12 }}
                                 tickLine={false}
                                 axisLine={false}
-                                className="text-foreground"
+                                tickMargin={10}
+                                tick={{ fill: "hsl(var(--foreground))", fontSize: 12, opacity: 0.7 }}
+                                dy={5}
                             />
                             <YAxis
-                                tick={{ fill: "currentColor", fontSize: 12 }}
                                 tickLine={false}
                                 axisLine={false}
-                                tickFormatter={(value) => `Bs${(value / 1000).toFixed(0)}k`}
-                                className="text-foreground"
+                                tickFormatter={(value) => `${(value / 1000).toFixed(0)}k`}
+                                tick={{ fill: "hsl(var(--foreground))", fontSize: 11, opacity: 0.7 }}
+                                dx={-5}
                             />
-                            <Tooltip content={<CustomTooltip />} />
-                            <Legend
-                                verticalAlign="top"
-                                align="right"
-                                wrapperStyle={{ paddingBottom: 20 }}
-                                formatter={(value) => (
-                                    <span className="text-sm text-muted-foreground">
-                                        {value === "sales" ? "Ventas" : "Gastos"}
-                                    </span>
-                                )}
+                            <Tooltip
+                                cursor={{ fill: 'hsl(var(--muted))', opacity: 0.1 }}
+                                content={<CustomTooltip />}
                             />
+                            {/* Legend removed in favor of custom header legend for cleaner look */}
+
                             <Bar
                                 dataKey="sales"
                                 name="sales"
                                 fill="hsl(239 84% 67%)"
-                                radius={[6, 6, 0, 0]}
-                                maxBarSize={32}
+                                radius={[4, 4, 0, 0]}
+                                maxBarSize={40}
                             />
                             <Bar
                                 dataKey="expenses"
                                 name="expenses"
                                 fill="hsl(350 89% 60%)"
-                                radius={[6, 6, 0, 0]}
-                                maxBarSize={32}
+                                radius={[4, 4, 0, 0]}
+                                maxBarSize={40}
                             />
                         </BarChart>
                     </ResponsiveContainer>

@@ -1,18 +1,18 @@
-"use client";
-
-import { useState } from "react";
-import { Loader2, Plus, Minus } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Loader2, Plus, Minus, Calculator } from "lucide-react";
 import {
     Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
     DialogDescription,
+    DialogFooter,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { Badge } from "@/components/ui/badge";
 import { productsApi, Product } from "@/lib/api-client";
+import { cn } from "@/lib/utils";
 
 interface StockAdjustModalProps {
     open: boolean;
@@ -21,136 +21,187 @@ interface StockAdjustModalProps {
     onSuccess: () => void;
 }
 
-export function StockAdjustModal({ open, onOpenChange, product, onSuccess }: StockAdjustModalProps) {
-    const [adjustment, setAdjustment] = useState<string>("0");
+export function StockAdjustModal({
+    open,
+    onOpenChange,
+    product,
+    onSuccess,
+}: StockAdjustModalProps) {
+    const [adjustment, setAdjustment] = useState<string>("");
     const [isLoading, setIsLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
 
-    const adjustmentValue = parseInt(adjustment, 10) || 0;
-    const newStock = product ? product.stock + adjustmentValue : 0;
+    // Reset state when modal opens
+    useEffect(() => {
+        if (open) {
+            setAdjustment("");
+        }
+    }, [open]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!product || adjustmentValue === 0) return;
+    if (!product) return null;
 
+    const currentStock = product.stock;
+    const adjustValue = parseInt(adjustment) || 0;
+    const newStock = currentStock + adjustValue;
+    const isNegative = adjustValue < 0;
+    const isPositive = adjustValue > 0;
+
+    const handleSubmit = async () => {
+        if (adjustValue === 0) return;
         setIsLoading(true);
-        setError(null);
-
         try {
             await productsApi.update(product.id, {
                 stock: newStock,
             });
             onSuccess();
             onOpenChange(false);
-            setAdjustment("0");
-        } catch (err: any) {
-            console.error("Error adjusting stock:", err);
-            setError(err.message || "Error al ajustar el stock");
+        } catch (error) {
+            console.error("Error adjusting stock:", error);
         } finally {
             setIsLoading(false);
         }
     };
 
-    const quickAdjust = (amount: number) => {
-        setAdjustment(String(adjustmentValue + amount));
+    const handleQuickAction = (amount: number) => {
+        const current = parseInt(adjustment) || 0;
+        setAdjustment(String(current + amount));
     };
-
-    if (!product) return null;
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                    <DialogTitle>Ajustar Stock</DialogTitle>
-                    <DialogDescription>
-                        {product.name} (SKU: {product.sku})
+            <DialogContent className="sm:max-w-md p-0 overflow-hidden gap-0">
+                <DialogHeader className="p-6 pb-4 border-b border-slate-100 bg-slate-50/50">
+                    <DialogTitle className="text-lg font-semibold text-slate-900">
+                        Ajustar Stock
+                    </DialogTitle>
+                    <DialogDescription className="flex items-center gap-2 mt-1.5">
+                        <span className="font-medium text-slate-700">{product.name}</span>
+                        <span className="text-slate-400">•</span>
+                        <span className="font-mono text-xs text-slate-500">{product.sku}</span>
                     </DialogDescription>
                 </DialogHeader>
 
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    {error && (
-                        <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-sm">
-                            {error}
-                        </div>
-                    )}
-
-                    <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
-                        <span className="text-muted-foreground">Stock actual</span>
-                        <span className="text-2xl font-bold">{product.stock}</span>
-                    </div>
-
-                    <div className="space-y-2">
-                        <Label>Ajuste (positivo para agregar, negativo para quitar)</Label>
-                        <div className="flex items-center gap-2">
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                onClick={() => quickAdjust(-10)}
-                                disabled={newStock < 0 && adjustmentValue - 10 < -product.stock}
-                            >
-                                -10
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                onClick={() => quickAdjust(-1)}
-                                disabled={newStock <= 0 && adjustmentValue - 1 < -product.stock}
-                            >
-                                <Minus className="h-4 w-4" />
-                            </Button>
-                            <Input
-                                type="number"
-                                value={adjustment}
-                                onChange={(e) => setAdjustment(e.target.value)}
-                                className="text-center text-lg font-semibold"
-                            />
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                onClick={() => quickAdjust(1)}
-                            >
-                                <Plus className="h-4 w-4" />
-                            </Button>
-                            <Button
-                                type="button"
-                                variant="outline"
-                                size="icon"
-                                onClick={() => quickAdjust(10)}
-                            >
-                                +10
-                            </Button>
-                        </div>
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-primary/10 rounded-lg">
-                        <span className="text-primary font-medium">Nuevo stock</span>
-                        <span className={`text-2xl font-bold ${newStock < 0 ? "text-destructive" : "text-primary"}`}>
-                            {Math.max(0, newStock)}
+                <div className="p-6 space-y-8">
+                    {/* Current Stock Display */}
+                    <div className="flex flex-col items-center justify-center space-y-1">
+                        <span className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
+                            Stock Actual
+                        </span>
+                        <span className="text-4xl font-bold text-slate-900 tracking-tight">
+                            {currentStock}
                         </span>
                     </div>
 
-                    <div className="flex justify-end gap-2 pt-4">
-                        <Button type="button" variant="outline" onClick={() => onOpenChange(false)} disabled={isLoading}>
-                            Cancelar
-                        </Button>
-                        <Button
-                            type="submit"
-                            disabled={isLoading || adjustmentValue === 0 || newStock < 0}
-                        >
-                            {isLoading ? (
-                                <>
-                                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                    Guardando...
-                                </>
-                            ) : (
-                                "Aplicar Ajuste"
-                            )}
-                        </Button>
+                    {/* Adjustment Input Area */}
+                    <div className="space-y-4">
+                        <div className="relative flex items-center justify-center">
+                            <Input
+                                type="number"
+                                autoFocus
+                                value={adjustment}
+                                onChange={(e) => setAdjustment(e.target.value)}
+                                placeholder="0"
+                                className="h-14 text-center text-3xl font-bold border-slate-200 focus-visible:ring-slate-200 focus-visible:border-slate-400 w-48 shadow-sm rounded-xl"
+                            />
+                        </div>
+
+                        {/* Quick Actions */}
+                        <div className="flex items-center justify-center gap-2">
+                            <Badge
+                                variant="outline"
+                                className="cursor-pointer hover:bg-slate-100 px-3 py-1.5 h-8 text-sm font-medium transition-colors border-slate-200 text-slate-600"
+                                onClick={() => handleQuickAction(-10)}
+                            >
+                                -10
+                            </Badge>
+                            <Badge
+                                variant="outline"
+                                className="cursor-pointer hover:bg-slate-100 px-3 py-1.5 h-8 text-sm font-medium transition-colors border-slate-200 text-slate-600"
+                                onClick={() => handleQuickAction(-1)}
+                            >
+                                -1
+                            </Badge>
+                            <div className="w-px h-6 bg-slate-200 mx-1" />
+                            <Badge
+                                variant="outline"
+                                className="cursor-pointer hover:bg-slate-100 px-3 py-1.5 h-8 text-sm font-medium transition-colors border-slate-200 text-slate-600"
+                                onClick={() => handleQuickAction(1)}
+                            >
+                                +1
+                            </Badge>
+                            <Badge
+                                variant="outline"
+                                className="cursor-pointer hover:bg-slate-100 px-3 py-1.5 h-8 text-sm font-medium transition-colors border-slate-200 text-slate-600"
+                                onClick={() => handleQuickAction(10)}
+                            >
+                                +10
+                            </Badge>
+                        </div>
                     </div>
-                </form>
+
+                    {/* Calculation Preview */}
+                    <div className="bg-slate-50 rounded-lg p-4 border border-slate-100">
+                        <div className="flex items-center justify-between text-sm">
+                            <span className="text-muted-foreground">Cálculo:</span>
+                            <div className="flex items-center gap-2 font-medium">
+                                <span className="text-slate-600">{currentStock}</span>
+                                <span className="text-slate-400">
+                                    {adjustValue >= 0 ? "+" : ""}
+                                </span>
+                                <span
+                                    className={cn(
+                                        "transition-colors",
+                                        isPositive && "text-emerald-600",
+                                        isNegative && "text-red-600",
+                                        !adjustValue && "text-slate-400"
+                                    )}
+                                >
+                                    {adjustValue}
+                                </span>
+                                <span className="text-slate-400">=</span>
+                                <span
+                                    className={cn(
+                                        "text-lg font-bold transition-colors",
+                                        newStock < 0 ? "text-red-600" : "text-slate-900"
+                                    )}
+                                >
+                                    {newStock}
+                                </span>
+                            </div>
+                        </div>
+                        {newStock < 0 && (
+                            <p className="text-xs text-red-500 mt-2 text-right font-medium">
+                                El stock no puede ser negativo
+                            </p>
+                        )}
+                    </div>
+                </div>
+
+                <DialogFooter className="p-6 pt-2">
+                    <Button
+                        variant="ghost"
+                        onClick={() => onOpenChange(false)}
+                        disabled={isLoading}
+                        className="text-muted-foreground hover:text-slate-900"
+                    >
+                        Cancelar
+                    </Button>
+                    <Button
+                        onClick={handleSubmit}
+                        disabled={isLoading || adjustValue === 0 || newStock < 0}
+                        className={cn(
+                            "min-w-[120px] shadow-sm",
+                            isNegative && "bg-slate-900 hover:bg-slate-800",
+                            isPositive && "bg-slate-900 hover:bg-slate-800"
+                        )}
+                    >
+                        {isLoading ? (
+                            <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                        ) : (
+                            <Calculator className="h-4 w-4 mr-2" />
+                        )}
+                        Confirmar
+                    </Button>
+                </DialogFooter>
             </DialogContent>
         </Dialog>
     );

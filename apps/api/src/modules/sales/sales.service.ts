@@ -159,5 +159,50 @@ export class SalesService {
             todayOrders,
         };
     }
+
+    async cancel(id: string, createRefund: boolean = true) {
+        const tenantId = this.tenantPrisma.getTenantId();
+        if (!tenantId) throw new ForbiddenException("Tenant no identificado");
+
+        const sale = await this.tenantPrisma.sale.findUnique({
+            where: { id },
+            include: { items: true },
+        });
+
+        if (!sale) throw new BadRequestException("Venta no encontrada");
+        if (sale.status === "CANCELLED") throw new BadRequestException("La venta ya está cancelada");
+
+        return this.prisma.$transaction(async (tx) => {
+            // 1. Update Sale Status
+            const updatedSale = await tx.sale.update({
+                where: { id },
+                data: { status: "CANCELLED" },
+            });
+
+            // 2. Restore Stock
+            for (const item of sale.items) {
+                await tx.product.update({
+                    where: { id: item.productId, tenantId }, // Ensure tenant isolation
+                    data: { stock: { increment: item.quantity } },
+                });
+            }
+
+            // 3. Create Refund Transaction (Optional)
+            if (createRefund) {
+                await tx.transaction.create({
+                    data: {
+                        tenantId,
+                        type: "REFUND",
+                        description: `Anulación Venta #${sale.id.slice(-6).toUpperCase()}`,
+                        amount: sale.total, // Positive amount, but type REFUND implies outflow in logic
+                        method: sale.paymentMethod,
+                        reference: sale.id,
+                    },
+                });
+            }
+
+            return updatedSale;
+        });
+    }
 }
 

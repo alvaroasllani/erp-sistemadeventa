@@ -86,7 +86,8 @@ export const useCartStore = create<CartState>((set, get) => ({
     },
 
     getTotal: () => {
-        return get().getSubtotal() + get().getTax();
+        // No IVA/tax applied - total equals subtotal
+        return get().getSubtotal();
     },
 
     getItemCount: () => {

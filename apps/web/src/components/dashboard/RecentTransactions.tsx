@@ -89,16 +89,24 @@ export function RecentTransactions() {
     }, []);
 
     return (
-        <Card className="flex flex-col">
-            <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold">
-                    Transacciones Recientes
-                </CardTitle>
-                <p className="text-sm text-muted-foreground">
-                    Últimos movimientos del día
-                </p>
+        <Card className="flex flex-col h-full rounded-xl border-border/60 shadow-sm overflow-hidden">
+            <CardHeader className="flex flex-row items-center justify-between py-5 pb-3">
+                <div className="space-y-1">
+                    <CardTitle className="text-lg font-semibold tracking-tight">
+                        Transacciones
+                    </CardTitle>
+                    <p className="text-sm text-muted-foreground">
+                        Últimos movimientos
+                    </p>
+                </div>
+                <Link
+                    href="/finanzas"
+                    className="text-xs font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                    Ver todo
+                </Link>
             </CardHeader>
-            <CardContent className="flex-1 flex flex-col">
+            <CardContent className="flex-1 flex flex-col p-0">
                 {isLoading ? (
                     <div className="flex-1 flex items-center justify-center py-8">
                         <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -108,21 +116,16 @@ export function RecentTransactions() {
                         No hay transacciones aún
                     </div>
                 ) : (
-                    <ScrollArea className="flex-1 -mx-2 px-2">
-                        <div className="space-y-0">
+                    <ScrollArea className="flex-1 h-[270px]">
+                        <div className="flex flex-col">
                             {transactions.map((transaction) => (
-                                <TransactionItem key={transaction.id} transaction={transaction} />
+                                <div key={transaction.id} className="hover:bg-muted/40 transition-colors px-6">
+                                    <TransactionItem transaction={transaction} />
+                                </div>
                             ))}
                         </div>
                     </ScrollArea>
                 )}
-                <Link
-                    href="/finanzas"
-                    className="flex items-center justify-center gap-1.5 mt-4 py-2 text-sm font-medium text-muted-foreground hover:text-primary transition-colors group"
-                >
-                    Ver todo
-                    <ArrowRight className="size-4 group-hover:translate-x-0.5 transition-transform" />
-                </Link>
             </CardContent>
         </Card>
     );

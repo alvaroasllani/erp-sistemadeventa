@@ -53,12 +53,15 @@ const INSIGHTS = [
     },
 ];
 
+import { AuditHistoryDialog } from "@/components/reports/AuditHistoryDialog";
+
 export default function ReportesPage() {
     return (
         <div className="space-y-6">
             <PageHeader
                 title="Reportes"
                 description="Insights y métricas clave de tu negocio"
+                actions={<AuditHistoryDialog />}
             />
 
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

@@ -63,7 +63,7 @@ export default function DashboardPage() {
             />
 
             {/* KPI Cards Grid */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <KPICard
                     title="Ventas Totales (Hoy)"
                     value={formatCurrency(stats.todaySales)}
@@ -98,10 +98,17 @@ export default function DashboardPage() {
                 />
             </div>
 
-            {/* Charts and Transactions */}
-            <div className="grid gap-6 lg:grid-cols-3">
-                <SalesChart />
-                <RecentTransactions />
+            {/* Bento Grid: Charts and Transactions */}
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Sales Chart - Spans 8 columns on large screens */}
+                <div className="lg:col-span-8">
+                    <SalesChart />
+                </div>
+
+                {/* Transactions - Spans 4 columns on large screens */}
+                <div className="lg:col-span-4 h-full">
+                    <RecentTransactions />
+                </div>
             </div>
         </div>
     );

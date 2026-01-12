@@ -139,6 +139,20 @@ export const productsApi = {
     getLowStock: () => fetchApi<Product[]>("/products/low-stock"),
 };
 
+// ==================== CATEGORIES API ====================
+export const categoriesApi = {
+    getAll: () => fetchApi<Category[]>("/categories"),
+
+    create: (data: { name: string; color?: string }) =>
+        fetchApi<Category>("/categories", {
+            method: "POST",
+            body: JSON.stringify(data),
+        }),
+
+    delete: (id: string) =>
+        fetchApi<void>(`/categories/${id}`, { method: "DELETE" }),
+};
+
 // ==================== SALES API ====================
 export const salesApi = {
     create: (data: CreateSaleData) =>
@@ -166,17 +180,16 @@ export const salesApi = {
 
 // ==================== FINANCE API ====================
 export const financeApi = {
-    getTransactions: (params?: { page?: number; limit?: number; type?: string }) => {
-        const searchParams = new URLSearchParams();
-        if (params?.page) searchParams.set("page", String(params.page));
-        if (params?.limit) searchParams.set("limit", String(params.limit));
-        if (params?.type) searchParams.set("type", params.type);
-
-        const query = searchParams.toString();
-        return fetchApi<{
-            data: Transaction[];
-            meta: { total: number; page: number; limit: number; totalPages: number };
-        }>(`/finance/transactions${query ? `?${query}` : ""}`);
+    getTransactions: (params?: { page?: number; limit?: number; type?: string; startDate?: string; endDate?: string; includeDeleted?: boolean, onlyDeleted?: boolean }) => {
+        const query = new URLSearchParams();
+        if (params?.page) query.append("page", params.page.toString());
+        if (params?.limit) query.append("limit", params.limit.toString());
+        if (params?.type && params.type !== "ALL") query.append("type", params.type);
+        if (params?.startDate) query.append("startDate", params.startDate);
+        if (params?.endDate) query.append("endDate", params.endDate);
+        if (params?.includeDeleted) query.append("includeDeleted", "true");
+        if (params?.onlyDeleted) query.append("onlyDeleted", "true");
+        return fetchApi<{ data: Transaction[]; meta: { total: number; totalPages: number } }>(`/finance?${query.toString()}`);
     },
 
     getDashboardStats: () =>
@@ -192,7 +205,37 @@ export const financeApi = {
 
     getWeeklyChart: () =>
         fetchApi<{ day: string; sales: number; expenses: number }[]>("/finance/chart"),
+
+    create: (data: {
+        type: "SALE" | "EXPENSE" | "REFUND";
+        description: string;
+        amount: number;
+        category?: string;
+        method?: "CASH" | "CARD" | "QR" | "TRANSFER";
+    }) =>
+        fetchApi<Transaction>("/finance", {
+            method: "POST",
+            body: JSON.stringify(data),
+        }),
+
+    delete: (id: string) =>
+        fetchApi(`/finance/${id}`, {
+            method: "DELETE",
+        }),
+
+    getDeletedTransactions: () =>
+        fetchApi<DeletedTransaction[]>("/finance/deleted"),
 };
+
+export interface DeletedTransaction {
+    id: string;
+    originalId: string | null;
+    type: string;
+    description: string;
+    amount: number;
+    deletedAt: string;
+    deletedBy: string | null;
+}
 
 // ==================== SETTINGS API ====================
 export const settingsApi = {
@@ -269,9 +312,11 @@ export interface Transaction {
     type: "SALE" | "EXPENSE" | "REFUND";
     description: string;
     amount: number;
+    category?: string;
     method: "CASH" | "CARD" | "QR" | "TRANSFER";
     reference: string | null;
     createdAt: string;
+    deletedAt?: string | null;
 }
 
 export interface CompanySettings {
@@ -284,4 +329,13 @@ export interface CompanySettings {
     logo: string | null;
     taxRate: number;
     currency: string;
+}
+
+export interface Category {
+    id: string;
+    name: string;
+    color: string;
+    _count?: {
+        products: number;
+    };
 }

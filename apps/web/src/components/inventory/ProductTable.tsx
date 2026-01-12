@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2, AlertTriangle, Package } from "lucide-react";
+import { SlidersHorizontal, Pencil, Trash2 } from "lucide-react";
 import {
     Table,
     TableBody,
@@ -10,6 +10,7 @@ import {
     TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { formatCurrency, cn } from "@/lib/utils";
 import type { Product } from "@/lib/api-client";
 
@@ -23,44 +24,26 @@ interface ProductTableProps {
     onAdjustStock?: (product: Product) => void;
 }
 
-function StockDisplay({ stock, minStock = 10 }: { stock: number; minStock?: number }) {
-    const isLow = stock < minStock;
-    const isOut = stock === 0;
-
-    if (isOut) {
+function StockBadge({ stock, minStock = 10 }: { stock: number; minStock?: number }) {
+    if (stock === 0) {
         return (
-            <div className="flex items-center justify-center gap-1.5">
-                <AlertTriangle className="size-4 text-red-500 dark:text-red-400" />
-                <span className="text-sm font-medium text-red-600 dark:text-red-400">Sin stock</span>
-            </div>
+            <Badge variant="outline" className="bg-red-50 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-600">
+                Sin stock
+            </Badge>
         );
     }
 
-    if (isLow) {
+    if (stock < minStock) {
         return (
-            <div className="flex items-center justify-center gap-1.5">
-                <AlertTriangle className="size-4 text-amber-500 dark:text-amber-400" />
-                <span className="text-sm font-medium text-amber-600 dark:text-amber-400">{stock} uds</span>
-            </div>
+            <Badge variant="outline" className="bg-amber-50 text-amber-600 border-amber-200 hover:bg-amber-50 hover:text-amber-600">
+                {stock} uds (Bajo)
+            </Badge>
         );
     }
 
     return (
-        <span className="text-sm text-muted-foreground tabular-nums">{stock} uds</span>
-    );
-}
-
-function StatusBadge({ status }: { status: "active" | "inactive" }) {
-    if (status === "active") {
-        return (
-            <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/10 text-green-700 dark:text-green-400 ring-1 ring-green-600/20">
-                Activo
-            </span>
-        );
-    }
-    return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-muted text-muted-foreground ring-1 ring-border">
-            Inactivo
+        <span className="text-sm text-muted-foreground tabular-nums font-medium">
+            {stock} uds
         </span>
     );
 }
@@ -76,33 +59,35 @@ export function ProductTable({
 }: ProductTableProps) {
     return (
         <div className="space-y-4">
-            {/* Table */}
-            <div className="rounded-xl border border-border bg-card shadow-sm overflow-hidden">
+            <div className="rounded-md border border-border bg-card shadow-sm overflow-hidden">
                 <Table>
-                    <TableHeader>
-                        <TableRow className="hover:bg-transparent">
-                            <TableHead className="w-[100px] font-semibold">Código</TableHead>
-                            <TableHead className="font-semibold">Producto</TableHead>
-                            <TableHead className="font-semibold">Categoría</TableHead>
-                            <TableHead className="font-semibold text-right">
+                    <TableHeader className="bg-muted/50">
+                        <TableRow className="border-b border-border hover:bg-transparent">
+                            <TableHead className="w-[300px] text-xs font-medium uppercase tracking-wider text-muted-foreground pl-6 py-4">
+                                Producto
+                            </TableHead>
+                            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                Categoría
+                            </TableHead>
+                            <TableHead className="text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
                                 P. Costo
                             </TableHead>
-                            <TableHead className="font-semibold text-right">
+                            <TableHead className="text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
                                 P. Venta
                             </TableHead>
-                            <TableHead className="font-semibold text-center">Stock</TableHead>
-                            <TableHead className="font-semibold text-center w-[100px]">Ajustar</TableHead>
-                            <TableHead className="font-semibold">Estado</TableHead>
-                            <TableHead className="w-[80px]"></TableHead>
+                            <TableHead className="text-center text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                                Stock
+                            </TableHead>
+                            <TableHead className="text-center text-xs font-medium uppercase tracking-wider text-muted-foreground w-[100px]">
+                                Stock
+                            </TableHead>
+                            <TableHead className="w-[60px]"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {products.length === 0 ? (
                             <TableRow>
-                                <TableCell
-                                    colSpan={9}
-                                    className="h-24 text-center text-muted-foreground"
-                                >
+                                <TableCell colSpan={7} className="h-32 text-center text-muted-foreground">
                                     No se encontraron productos
                                 </TableCell>
                             </TableRow>
@@ -110,55 +95,59 @@ export function ProductTable({
                             products.map((product) => (
                                 <TableRow
                                     key={product.id}
-                                    className="transition-colors hover:bg-muted/50"
+                                    className="border-b border-border hover:bg-muted/50 transition-colors group"
                                 >
-                                    <TableCell className="font-mono text-sm text-muted-foreground">
-                                        {product.sku}
+                                    <TableCell className="pl-6 py-3">
+                                        <div className="flex flex-col gap-0.5">
+                                            <span className="font-medium text-sm text-foreground leading-tight">
+                                                {product.name}
+                                            </span>
+                                            <span className="text-xs text-muted-foreground font-mono">
+                                                {product.sku}
+                                            </span>
+                                        </div>
                                     </TableCell>
-                                    <TableCell className="font-medium text-foreground">{product.name}</TableCell>
-                                    <TableCell>
-                                        <span className="text-sm font-medium text-foreground">
-                                            {product.category?.name || "Sin categoría"}
-                                        </span>
+                                    <TableCell className="py-3">
+                                        <Badge variant="secondary" className="font-normal text-muted-foreground bg-muted hover:bg-muted">
+                                            {product.category?.name || "General"}
+                                        </Badge>
                                     </TableCell>
-                                    <TableCell className="text-right text-muted-foreground tabular-nums">
+                                    <TableCell className="text-right tabular-nums py-3 text-sm text-muted-foreground">
                                         {formatCurrency(product.costPrice ?? 0)}
                                     </TableCell>
-                                    <TableCell className="text-right font-semibold text-foreground tabular-nums">
+                                    <TableCell className="text-right tabular-nums font-medium py-3 text-sm text-foreground">
                                         {formatCurrency(product.salePrice)}
                                     </TableCell>
-                                    <TableCell className="text-center">
-                                        <StockDisplay stock={product.stock} minStock={product.minStock} />
+                                    <TableCell className="text-center py-3">
+                                        <StockBadge stock={product.stock} minStock={product.minStock} />
                                     </TableCell>
-                                    <TableCell className="text-center">
+                                    <TableCell className="text-center py-3">
                                         <Button
-                                            variant="outline"
+                                            variant="ghost"
                                             size="sm"
-                                            className="h-7 px-2 text-xs"
                                             onClick={() => onAdjustStock?.(product)}
+                                            className="h-8 w-8 p-0 text-muted-foreground hover:text-primary hover:bg-primary/5"
                                         >
-                                            <Package className="h-3.5 w-3.5 mr-1" />
-                                            Ajustar
+                                            <SlidersHorizontal className="h-4 w-4" />
                                         </Button>
                                     </TableCell>
-                                    <TableCell>
-                                        <StatusBadge status={product.status?.toLowerCase() as "active" | "inactive" ?? "active"} />
-                                    </TableCell>
-                                    <TableCell>
+                                    <TableCell className="py-3 pr-4 text-right">
                                         <div className="flex items-center justify-end gap-1">
                                             <Button
                                                 variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                size="sm"
                                                 onClick={() => onEdit?.(product)}
+                                                className="h-8 w-8 p-0 text-muted-foreground hover:text-blue-600 hover:bg-blue-50"
+                                                title="Editar"
                                             >
                                                 <Pencil className="h-4 w-4" />
                                             </Button>
                                             <Button
                                                 variant="ghost"
-                                                size="icon"
-                                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                size="sm"
                                                 onClick={() => onDelete?.(product)}
+                                                className="h-8 w-8 p-0 text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                                                title="Eliminar"
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -171,35 +160,27 @@ export function ProductTable({
                 </Table>
             </div>
 
-            {/* Pagination */}
+            {/* Pagination Controls */}
             {totalPages > 1 && (
-                <div className="flex items-center justify-center gap-2">
+                <div className="flex items-center justify-end space-x-2 py-4">
                     <Button
                         variant="outline"
                         size="sm"
                         onClick={() => onPageChange(currentPage - 1)}
                         disabled={currentPage === 1}
+                        className="h-8 w-24"
                     >
                         Anterior
                     </Button>
-                    <div className="flex items-center gap-1">
-                        {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map((page) => (
-                            <Button
-                                key={page}
-                                variant={currentPage === page ? "default" : "outline"}
-                                size="sm"
-                                className="w-8"
-                                onClick={() => onPageChange(page)}
-                            >
-                                {page}
-                            </Button>
-                        ))}
+                    <div className="flex items-center justify-center text-sm font-medium text-muted-foreground min-w-[100px]">
+                        Página {currentPage} de {totalPages}
                     </div>
                     <Button
                         variant="outline"
                         size="sm"
                         onClick={() => onPageChange(currentPage + 1)}
                         disabled={currentPage === totalPages}
+                        className="h-8 w-24"
                     >
                         Siguiente
                     </Button>
