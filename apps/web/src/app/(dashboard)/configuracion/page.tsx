@@ -67,7 +67,7 @@ export default function ConfiguracionPage() {
                                     {/* Logo Uploader */}
                                     <div className="flex items-start gap-6">
                                         <div className="relative group cursor-pointer">
-                                            <div className="h-24 w-24 rounded-full bg-gradient-to-br from-indigo-500 via-purple-500 to-pink-500 flex items-center justify-center ring-4 ring-background shadow-lg overflow-hidden">
+                                            <div className="h-24 w-24 rounded-full bg-gradient-to-br from-blue-500 via-blue-600 to-sky-500 flex items-center justify-center ring-4 ring-background shadow-lg overflow-hidden">
                                                 {/* Mock existing logo */}
                                                 <span className="text-2xl font-bold text-white">FE</span>
 

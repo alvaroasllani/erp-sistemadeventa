@@ -1,21 +1,23 @@
 import { Injectable, Scope, Inject } from "@nestjs/common";
 import { REQUEST } from "@nestjs/core";
-import { PrismaClient, Prisma } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import { Request } from "express";
+import { PrismaService } from "../prisma/prisma.service";
 
 /**
  * TenantPrismaService - Request-scoped Prisma client with automatic tenant filtering
  * 
  * This service automatically injects tenantId into all queries, providing
  * built-in isolation between tenants (Layer 3 of our security model).
+ * 
+ * IMPORTANT: Uses shared PrismaService to avoid connection pool exhaustion.
  */
 @Injectable({ scope: Scope.REQUEST })
 export class TenantPrismaService {
-    private readonly prisma: PrismaClient;
-
-    constructor(@Inject(REQUEST) private readonly request: Request) {
-        this.prisma = new PrismaClient();
-    }
+    constructor(
+        @Inject(REQUEST) private readonly request: Request,
+        private readonly prisma: PrismaService
+    ) { }
 
     /**
      * Get tenantId from the request - called at query time to ensure
@@ -127,7 +129,7 @@ export class TenantPrismaService {
         });
     }
 
-    // Transaction support
+    // Transaction support - use shared prisma instance
     async $transaction<T>(fn: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
         return this.prisma.$transaction(fn);
     }
@@ -137,4 +139,5 @@ export class TenantPrismaService {
         return this.getTenantIdFromRequest();
     }
 }
+
 

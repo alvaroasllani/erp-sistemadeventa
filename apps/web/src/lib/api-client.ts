@@ -1,5 +1,5 @@
 /**
- * API Client for Nexus ERP
+ * API Client for WebCody ERP
  * Handles all HTTP requests to the backend with authentication
  */
 

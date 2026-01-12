@@ -53,21 +53,22 @@
 
 :root {
   --radius: 0.75rem;
-  /* Modern SaaS Clean - Light Theme */
+  /* Electric Blue SaaS Theme - Light Mode */
   --background: hsl(210 40% 98%);
   --foreground: hsl(222 47% 11%);
   --card: hsl(0 0% 100%);
   --card-foreground: hsl(222 47% 11%);
   --popover: hsl(0 0% 100%);
   --popover-foreground: hsl(222 47% 11%);
-  --primary: hsl(239 84% 67%);
+  /* Electric Blue - Blue-600 (#2563EB) */
+  --primary: hsl(217 91% 60%);
   --primary-foreground: hsl(0 0% 100%);
   --secondary: hsl(210 40% 96%);
   --secondary-foreground: hsl(222 47% 11%);
   --muted: hsl(210 40% 96%);
   --muted-foreground: hsl(215 16% 47%);
-  --accent: hsl(239 84% 67% / 0.1);
-  --accent-foreground: hsl(239 84% 67%);
+  --accent: hsl(217 91% 60% / 0.1);
+  --accent-foreground: hsl(217 91% 60%);
   --destructive: hsl(0 84% 60%);
   --destructive-foreground: hsl(0 0% 98%);
   --success: hsl(142 76% 36%);
@@ -76,37 +77,39 @@
   --warning-foreground: hsl(0 0% 100%);
   --border: hsl(214 32% 91%);
   --input: hsl(214 32% 91%);
-  --ring: hsl(239 84% 67%);
-  --chart-1: hsl(239 84% 67%);
+  --ring: hsl(217 91% 60%);
+  --chart-1: hsl(217 91% 60%);
   --chart-2: hsl(350 89% 60%);
   --chart-3: hsl(142 76% 36%);
   --chart-4: hsl(38 92% 50%);
   --chart-5: hsl(0 84% 60%);
   --sidebar: hsl(0 0% 100%);
   --sidebar-foreground: hsl(222 47% 11%);
-  --sidebar-primary: hsl(239 84% 67%);
+  --sidebar-primary: hsl(217 91% 60%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(239 84% 67% / 0.08);
-  --sidebar-accent-foreground: hsl(239 84% 60%);
+  --sidebar-accent: hsl(217 91% 60% / 0.08);
+  --sidebar-accent-foreground: hsl(217 91% 55%);
   --sidebar-border: hsl(214 32% 91%);
-  --sidebar-ring: hsl(239 84% 67%);
+  --sidebar-ring: hsl(217 91% 60%);
 }
 
 .dark {
+  /* Electric Blue SaaS Theme - Dark Mode */
   --background: hsl(222 47% 6%);
   --foreground: hsl(210 40% 98%);
   --card: hsl(222 47% 9%);
   --card-foreground: hsl(210 40% 98%);
   --popover: hsl(222 47% 9%);
   --popover-foreground: hsl(210 40% 98%);
-  --primary: hsl(239 84% 67%);
+  /* Electric Blue - Blue-500 (#3B82F6) for better dark mode contrast */
+  --primary: hsl(217 91% 65%);
   --primary-foreground: hsl(0 0% 100%);
   --secondary: hsl(222 47% 14%);
   --secondary-foreground: hsl(210 40% 98%);
   --muted: hsl(222 47% 14%);
   --muted-foreground: hsl(215 16% 57%);
-  --accent: hsl(239 84% 67% / 0.15);
-  --accent-foreground: hsl(239 84% 75%);
+  --accent: hsl(217 91% 65% / 0.15);
+  --accent-foreground: hsl(217 91% 70%);
   --destructive: hsl(0 63% 50%);
   --destructive-foreground: hsl(0 0% 98%);
   --success: hsl(142 76% 36%);
@@ -115,20 +118,20 @@
   --warning-foreground: hsl(0 0% 100%);
   --border: hsl(222 47% 16%);
   --input: hsl(222 47% 16%);
-  --ring: hsl(239 84% 67%);
-  --chart-1: hsl(239 84% 67%);
+  --ring: hsl(217 91% 65%);
+  --chart-1: hsl(217 91% 65%);
   --chart-2: hsl(350 89% 60%);
   --chart-3: hsl(142 76% 36%);
   --chart-4: hsl(38 92% 50%);
   --chart-5: hsl(0 84% 60%);
   --sidebar: hsl(222 47% 9%);
   --sidebar-foreground: hsl(210 40% 98%);
-  --sidebar-primary: hsl(239 84% 67%);
+  --sidebar-primary: hsl(217 91% 65%);
   --sidebar-primary-foreground: hsl(0 0% 100%);
-  --sidebar-accent: hsl(239 84% 67% / 0.15);
-  --sidebar-accent-foreground: hsl(239 84% 75%);
+  --sidebar-accent: hsl(217 91% 65% / 0.15);
+  --sidebar-accent-foreground: hsl(217 91% 70%);
   --sidebar-border: hsl(222 47% 16%);
-  --sidebar-ring: hsl(239 84% 67%);
+  --sidebar-ring: hsl(217 91% 65%);
 }
 
 @layer base {
@@ -165,5 +168,65 @@
 
   .scrollbar-thin::-webkit-scrollbar-thumb:hover {
     background-color: hsl(var(--muted-foreground) / 0.5);
+  }
+
+  /* Animated Mesh Gradient for Hero - Electric Blue */
+  .mesh-gradient-bg {
+    background-image:
+      radial-gradient(at 0% 0%, rgba(37, 99, 235, 0.08) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(59, 130, 246, 0.06) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, rgba(37, 99, 235, 0.05) 0px, transparent 40%),
+      radial-gradient(at 0% 100%, rgba(59, 130, 246, 0.08) 0px, transparent 50%);
+    animation: mesh-float 20s ease-in-out infinite;
+  }
+
+  .dark .mesh-gradient-bg {
+    background-image:
+      radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.15) 0px, transparent 50%),
+      radial-gradient(at 100% 0%, rgba(37, 99, 235, 0.12) 0px, transparent 50%),
+      radial-gradient(at 80% 50%, rgba(59, 130, 246, 0.08) 0px, transparent 40%),
+      radial-gradient(at 0% 100%, rgba(37, 99, 235, 0.15) 0px, transparent 50%);
+  }
+
+  /* Logo grayscale hover effect for Social Proof */
+  .logo-grayscale {
+    filter: grayscale(100%);
+    opacity: 0.4;
+    transition: all 0.3s ease;
+  }
+
+  .logo-grayscale:hover {
+    filter: grayscale(0%);
+    opacity: 1;
+  }
+
+  /* Feature card visual hover */
+  .feature-visual {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+
+  .group:hover .feature-visual {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px -5px rgba(37, 99, 235, 0.15);
+  }
+}
+
+@keyframes mesh-float {
+
+  0%,
+  100% {
+    background-position: 0% 0%, 100% 0%, 80% 50%, 0% 100%;
+  }
+
+  25% {
+    background-position: 10% 10%, 90% 10%, 70% 60%, 10% 90%;
+  }
+
+  50% {
+    background-position: 5% 20%, 95% 5%, 75% 40%, 5% 95%;
+  }
+
+  75% {
+    background-position: 15% 5%, 85% 15%, 85% 55%, 15% 85%;
   }
 }

@@ -21,7 +21,7 @@ export default function LoginPage() {
 
         const success = await login(email, password);
         if (success) {
-            router.push("/");
+            router.push("/dashboard");
         }
     };
 
@@ -33,7 +33,7 @@ export default function LoginPage() {
                         <Hexagon className="h-8 w-8 text-primary-foreground" />
                     </div>
                     <div>
-                        <CardTitle className="text-2xl">Bienvenido a Nexus</CardTitle>
+                        <CardTitle className="text-2xl">Bienvenido a WebCody ERP</CardTitle>
                         <CardDescription className="mt-1">
                             Inicia sesión para acceder al sistema
                         </CardDescription>

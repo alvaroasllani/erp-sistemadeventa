@@ -8,7 +8,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: "Nexus ERP - Sistema de Gestión Empresarial",
+  title: "WebCody ERP - Sistema de Gestión Empresarial",
   description: "Sistema ERP moderno para retail: Ferreterías, Farmacias y Tiendas",
   keywords: ["ERP", "inventario", "punto de venta", "gestión empresarial"],
 };
