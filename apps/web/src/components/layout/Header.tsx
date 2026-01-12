@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
-import { Bell, Menu, LogOut, Settings, User, LayoutDashboard, Moon, Sun, Package, AlertTriangle } from "lucide-react";
+import { Bell, Menu, LogOut, Settings, User, LayoutDashboard, Moon, Sun, Package, AlertTriangle, Trash2, DollarSign, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -22,30 +22,59 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuthStore } from "@/stores/authStore";
 import { cn } from "@/lib/utils";
+import { notificationsApi, NotificationItem } from "@/lib/api-client";
 
 interface HeaderProps {
     onMenuClick?: () => void;
     isSidebarCollapsed?: boolean;
 }
 
-// Sample notifications - in real app, fetch from API
-const notifications = [
-    { id: 1, type: "warning", title: "Stock bajo", message: "5 productos con stock bajo", time: "Hace 5 min", icon: AlertTriangle },
-    { id: 2, type: "info", title: "Nueva venta", message: "Venta #1234 completada", time: "Hace 15 min", icon: Package },
-    { id: 3, type: "warning", title: "Producto agotado", message: "Martillo 500g sin stock", time: "Hace 1 hora", icon: AlertTriangle },
-];
+const iconMap = {
+    AlertTriangle,
+    Package,
+    Trash2,
+    DollarSign,
+};
 
 export function Header({ onMenuClick, isSidebarCollapsed = false }: HeaderProps) {
     const router = useRouter();
     const { user, logout } = useAuthStore();
     const [isDark, setIsDark] = useState(false);
-    const [notificationCount, setNotificationCount] = useState(notifications.length);
+    const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+    const [notificationCount, setNotificationCount] = useState(0);
+    const [isLoadingNotifications, setIsLoadingNotifications] = useState(false);
+    const [isPopoverOpen, setIsPopoverOpen] = useState(false);
 
     // Theme toggle effect
     useEffect(() => {
         const isDarkMode = document.documentElement.classList.contains("dark");
         setIsDark(isDarkMode);
     }, []);
+
+    const loadNotifications = useCallback(async () => {
+        setIsLoadingNotifications(true);
+        try {
+            const data = await notificationsApi.getAll();
+            setNotifications(data);
+            setNotificationCount(data.length);
+        } catch (error) {
+            console.error("Error loading notifications:", error);
+        } finally {
+            setIsLoadingNotifications(false);
+        }
+    }, []);
+
+    // Load notifications when popover opens
+    useEffect(() => {
+        if (isPopoverOpen) {
+            loadNotifications();
+        }
+    }, [isPopoverOpen, loadNotifications]);
+
+    // Initial load for badge count
+    useEffect(() => {
+        loadNotifications();
+    }, [loadNotifications]);
 
     const toggleTheme = () => {
         const newIsDark = !isDark;
@@ -76,6 +105,7 @@ export function Header({ onMenuClick, isSidebarCollapsed = false }: HeaderProps)
     };
 
     const handleMarkNotificationsRead = () => {
+        setNotifications([]);
         setNotificationCount(0);
     };
 
@@ -150,27 +180,34 @@ export function Header({ onMenuClick, isSidebarCollapsed = false }: HeaderProps)
                             </div>
                         ) : (
                             <div className="divide-y divide-border">
-                                {notifications.map((notification) => (
-                                    <div
-                                        key={notification.id}
-                                        className="flex items-start gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors"
-                                    >
-                                        <div className={cn(
-                                            "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
-                                            notification.type === "warning" ? "bg-amber-100 dark:bg-amber-900/30" : "bg-blue-100 dark:bg-blue-900/30"
-                                        )}>
-                                            <notification.icon className={cn(
-                                                "size-4",
-                                                notification.type === "warning" ? "text-amber-600 dark:text-amber-400" : "text-blue-600 dark:text-blue-400"
-                                            )} />
+                                {notifications.map((notification) => {
+                                    const IconComponent = iconMap[notification.icon] || AlertTriangle;
+                                    return (
+                                        <div
+                                            key={notification.id}
+                                            className="flex items-start gap-3 p-3 hover:bg-muted/50 cursor-pointer transition-colors"
+                                        >
+                                            <div className={cn(
+                                                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full",
+                                                notification.type === "warning" ? "bg-amber-100 dark:bg-amber-900/30"
+                                                    : notification.type === "success" ? "bg-green-100 dark:bg-green-900/30"
+                                                        : "bg-blue-100 dark:bg-blue-900/30"
+                                            )}>
+                                                <IconComponent className={cn(
+                                                    "size-4",
+                                                    notification.type === "warning" ? "text-amber-600 dark:text-amber-400"
+                                                        : notification.type === "success" ? "text-green-600 dark:text-green-400"
+                                                            : "text-blue-600 dark:text-blue-400"
+                                                )} />
+                                            </div>
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-sm font-medium">{notification.title}</p>
+                                                <p className="text-xs text-muted-foreground">{notification.message}</p>
+                                                <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
+                                            </div>
                                         </div>
-                                        <div className="flex-1 min-w-0">
-                                            <p className="text-sm font-medium">{notification.title}</p>
-                                            <p className="text-xs text-muted-foreground">{notification.message}</p>
-                                            <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
-                                        </div>
-                                    </div>
-                                ))}
+                                    );
+                                })}
                             </div>
                         )}
                     </ScrollArea>

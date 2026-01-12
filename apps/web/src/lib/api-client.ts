@@ -249,6 +249,20 @@ export const settingsApi = {
         }),
 };
 
+// ==================== NOTIFICATIONS API ====================
+export interface NotificationItem {
+    id: string;
+    type: "warning" | "info" | "success";
+    title: string;
+    message: string;
+    time: string;
+    icon: "AlertTriangle" | "Package" | "Trash2" | "DollarSign";
+}
+
+export const notificationsApi = {
+    getAll: () => fetchApi<NotificationItem[]>("/notifications"),
+};
+
 // ==================== TYPES ====================
 export interface Product {
     id: string;

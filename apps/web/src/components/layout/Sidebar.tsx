@@ -52,9 +52,6 @@ export function Sidebar({ isCollapsed = false, onCollapse }: SidebarProps) {
                             placeholder="Buscar..."
                             className="pl-9 pr-12 h-10 bg-muted/50 border-transparent hover:bg-muted/80 focus:bg-background focus:border-input focus:ring-1 focus:ring-primary/20 transition-all rounded-lg text-sm"
                         />
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none hidden lg:flex items-center gap-0.5 text-[10px] font-medium text-muted-foreground/60 border border-border/50 rounded px-1.5 py-0.5 bg-background/50">
-                            <span className="text-xs">⌘</span>K
-                        </div>
                     </div>
                 </div>
             )}
