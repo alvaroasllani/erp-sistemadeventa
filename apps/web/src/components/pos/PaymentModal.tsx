@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Check, Printer, Banknote } from "lucide-react";
+import { Check, Printer, Banknote, AlertCircle } from "lucide-react";
 import {
     Dialog,
     DialogContent,
@@ -14,6 +14,7 @@ import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
 import { useCartStore } from "@/stores/cartStore";
 import { formatCurrency } from "@/lib/utils";
+import { salesApi, Sale, ApiError } from "@/lib/api-client";
 
 interface PaymentModalProps {
     open: boolean;
@@ -21,21 +22,46 @@ interface PaymentModalProps {
 }
 
 export function PaymentModal({ open, onOpenChange }: PaymentModalProps) {
-    const { paymentMethod, getTotal, clearCart } = useCartStore();
+    const { items, paymentMethod, getTotal, clearCart } = useCartStore();
     const total = getTotal();
     const [amountReceived, setAmountReceived] = useState<string>("");
     const [isProcessing, setIsProcessing] = useState(false);
     const [isCompleted, setIsCompleted] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [completedSale, setCompletedSale] = useState<Sale | null>(null);
 
     const receivedNum = parseFloat(amountReceived) || 0;
     const change = receivedNum - total;
 
     const handlePayment = async () => {
         setIsProcessing(true);
-        // Simulate processing
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        setIsProcessing(false);
-        setIsCompleted(true);
+        setError(null);
+
+        try {
+            // Map cart items to API format
+            const saleItems = items.map(item => ({
+                productId: item.product.id,
+                quantity: item.quantity,
+            }));
+
+            // paymentMethod is already in correct format: "cash", "card", "qr"
+            const sale = await salesApi.create({
+                items: saleItems,
+                paymentMethod: paymentMethod,
+            });
+
+            setCompletedSale(sale);
+            setIsCompleted(true);
+        } catch (err) {
+            console.error("Error processing sale:", err);
+            if (err instanceof ApiError) {
+                setError(err.message);
+            } else {
+                setError("Error al procesar la venta. Intenta de nuevo.");
+            }
+        } finally {
+            setIsProcessing(false);
+        }
     };
 
     const handleClose = () => {
@@ -44,12 +70,14 @@ export function PaymentModal({ open, onOpenChange }: PaymentModalProps) {
         }
         setIsCompleted(false);
         setAmountReceived("");
+        setError(null);
+        setCompletedSale(null);
         onOpenChange(false);
     };
 
     const handlePrint = () => {
         // In a real app, this would trigger receipt printing
-        console.log("Printing receipt...");
+        console.log("Printing receipt for sale:", completedSale?.id);
         handleClose();
     };
 
@@ -102,6 +130,14 @@ export function PaymentModal({ open, onOpenChange }: PaymentModalProps) {
                 </DialogHeader>
 
                 <div className="space-y-4 py-4">
+                    {/* Error Message */}
+                    {error && (
+                        <div className="flex items-center gap-2 p-3 rounded-lg bg-destructive/10 text-destructive">
+                            <AlertCircle className="h-4 w-4" />
+                            <span className="text-sm">{error}</span>
+                        </div>
+                    )}
+
                     {/* Total */}
                     <div className="rounded-lg bg-muted p-4 text-center">
                         <p className="text-sm text-muted-foreground">Total a pagar</p>

@@ -6,6 +6,9 @@ import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { ProductFilters } from "@/components/inventory/ProductFilters";
 import { ProductTable } from "@/components/inventory/ProductTable";
+import { ProductModal } from "@/components/inventory/ProductModal";
+import { StockAdjustModal } from "@/components/inventory/StockAdjustModal";
+import { DeleteProductDialog } from "@/components/inventory/DeleteProductDialog";
 import { productsApi, Product } from "@/lib/api-client";
 import type { ProductFilters as ProductFiltersType } from "@/types/product.types";
 import { ITEMS_PER_PAGE } from "@/lib/constants";
@@ -20,6 +23,13 @@ export default function InventarioPage() {
     const [products, setProducts] = useState<Product[]>([]);
     const [totalProducts, setTotalProducts] = useState(0);
     const [isLoading, setIsLoading] = useState(true);
+
+    // Modal states
+    const [isProductModalOpen, setIsProductModalOpen] = useState(false);
+    const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Load products from API
     const loadProducts = useCallback(async () => {
@@ -54,19 +64,44 @@ export default function InventarioPage() {
         setCurrentPage(1);
     };
 
-    // Map API products to table format
-    const tableProducts = products.map(p => ({
-        id: p.id,
-        sku: p.sku,
-        name: p.name,
-        category: p.category?.name || "Sin categoría",
-        costPrice: typeof p.costPrice === 'number' ? p.costPrice : Number(p.costPrice),
-        salePrice: typeof p.salePrice === 'number' ? p.salePrice : Number(p.salePrice),
-        stock: p.stock,
-        minStock: p.minStock,
-        status: p.status,
-        image: p.image,
-    }));
+    // CRUD handlers
+    const handleCreateProduct = () => {
+        setSelectedProduct(null);
+        setIsProductModalOpen(true);
+    };
+
+    const handleEditProduct = (product: Product) => {
+        setSelectedProduct(product);
+        setIsProductModalOpen(true);
+    };
+
+    const handleDeleteProduct = (product: Product) => {
+        setSelectedProduct(product);
+        setIsDeleteDialogOpen(true);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!selectedProduct) return;
+        setIsDeleting(true);
+        try {
+            await productsApi.delete(selectedProduct.id);
+            loadProducts();
+            setIsDeleteDialogOpen(false);
+        } catch (error) {
+            console.error("Error deleting product:", error);
+        } finally {
+            setIsDeleting(false);
+        }
+    };
+
+    const handleAdjustStock = (product: Product) => {
+        setSelectedProduct(product);
+        setIsStockModalOpen(true);
+    };
+
+    const handleProductSuccess = () => {
+        loadProducts();
+    };
 
     return (
         <div className="space-y-6">
@@ -74,7 +109,7 @@ export default function InventarioPage() {
                 title="Inventario"
                 description="Gestiona tus productos y stock"
                 actions={
-                    <Button>
+                    <Button onClick={handleCreateProduct}>
                         <Plus className="mr-2 h-4 w-4" />
                         Nuevo Producto
                     </Button>
@@ -96,13 +131,42 @@ export default function InventarioPage() {
                 </div>
             ) : (
                 <ProductTable
-                    products={tableProducts}
+                    products={products}
                     currentPage={currentPage}
                     totalPages={totalPages}
                     onPageChange={setCurrentPage}
+                    onEdit={handleEditProduct}
+                    onDelete={handleDeleteProduct}
+                    onAdjustStock={handleAdjustStock}
                 />
             )}
+
+            {/* Product Create/Edit Modal */}
+            <ProductModal
+                open={isProductModalOpen}
+                onOpenChange={setIsProductModalOpen}
+                product={selectedProduct}
+                onSuccess={handleProductSuccess}
+            />
+
+            {/* Stock Adjust Modal */}
+            <StockAdjustModal
+                open={isStockModalOpen}
+                onOpenChange={setIsStockModalOpen}
+                product={selectedProduct}
+                onSuccess={handleProductSuccess}
+            />
+
+            {/* Delete Confirmation Dialog */}
+            <DeleteProductDialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                product={selectedProduct}
+                onConfirm={handleConfirmDelete}
+                isLoading={isDeleting}
+            />
         </div>
     );
 }
+
 

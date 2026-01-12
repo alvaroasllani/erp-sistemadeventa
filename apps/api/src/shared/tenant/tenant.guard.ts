@@ -17,10 +17,14 @@ export class TenantGuard implements CanActivate {
         }
 
         if (!user.tenantId) {
-            throw new ForbiddenException("Usuario sin tenant asignado");
+            console.error("TenantGuard: user object missing tenantId", { userId: user.userId, email: user.email });
+            throw new ForbiddenException("Tenant no identificado");
         }
 
-        // Verify tenant is active (optional: could add DB check here)
+        // Set tenantId on request for TenantPrismaService
+        request.tenantId = user.tenantId;
+
         return true;
     }
 }
+

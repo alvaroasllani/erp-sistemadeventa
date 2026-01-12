@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable, NotFoundException, BadRequestException } from "@nestjs/common";
 import { TenantPrismaService } from "../../shared/tenant";
 import { CreateProductDto, UpdateProductDto } from "./dto/product.dto";
 import { Prisma } from "@prisma/client";
@@ -86,15 +86,28 @@ export class ProductsService {
     }
 
     async create(data: CreateProductDto) {
-        // TenantPrismaService auto-adds tenantId via extension
-        return this.prisma.product.create({
-            data: data as any, // Type assertion needed due to Prisma extension
-            include: {
-                category: {
-                    select: { id: true, name: true, color: true },
+        try {
+            // TenantPrismaService auto-adds tenantId via extension
+            const result = await this.prisma.product.create({
+                data: data as any, // Type assertion needed due to Prisma extension
+                include: {
+                    category: {
+                        select: { id: true, name: true, color: true },
+                    },
                 },
-            },
-        });
+            });
+            return result;
+        } catch (error: any) {
+            // Handle unique constraint violation (SKU already exists)
+            if (error.code === 'P2002') {
+                const target = error.meta?.target as string[] | undefined;
+                if (target?.includes('sku')) {
+                    throw new BadRequestException(`El código SKU "${data.sku}" ya existe. Usa un código diferente.`);
+                }
+            }
+            console.error("Error creating product:", error);
+            throw error;
+        }
     }
 
     async update(id: string, data: UpdateProductDto) {

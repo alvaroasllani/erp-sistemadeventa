@@ -1,6 +1,6 @@
 "use client";
 
-import { Pencil, Trash2, AlertTriangle } from "lucide-react";
+import { Pencil, Trash2, AlertTriangle, Package } from "lucide-react";
 import {
     Table,
     TableBody,
@@ -11,13 +11,16 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { formatCurrency, cn } from "@/lib/utils";
-import type { Product } from "@/types/product.types";
+import type { Product } from "@/lib/api-client";
 
 interface ProductTableProps {
     products: Product[];
     currentPage: number;
     totalPages: number;
     onPageChange: (page: number) => void;
+    onEdit?: (product: Product) => void;
+    onDelete?: (product: Product) => void;
+    onAdjustStock?: (product: Product) => void;
 }
 
 function StockDisplay({ stock, minStock = 10 }: { stock: number; minStock?: number }) {
@@ -67,6 +70,9 @@ export function ProductTable({
     currentPage,
     totalPages,
     onPageChange,
+    onEdit,
+    onDelete,
+    onAdjustStock,
 }: ProductTableProps) {
     return (
         <div className="space-y-4">
@@ -85,15 +91,16 @@ export function ProductTable({
                                 P. Venta
                             </TableHead>
                             <TableHead className="font-semibold text-center">Stock</TableHead>
+                            <TableHead className="font-semibold text-center w-[100px]">Ajustar</TableHead>
                             <TableHead className="font-semibold">Estado</TableHead>
-                            <TableHead className="w-[50px]"></TableHead>
+                            <TableHead className="w-[80px]"></TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {products.length === 0 ? (
                             <TableRow>
                                 <TableCell
-                                    colSpan={8}
+                                    colSpan={9}
                                     className="h-24 text-center text-muted-foreground"
                                 >
                                     No se encontraron productos
@@ -103,7 +110,7 @@ export function ProductTable({
                             products.map((product) => (
                                 <TableRow
                                     key={product.id}
-                                    className="cursor-pointer transition-colors hover:bg-muted/50"
+                                    className="transition-colors hover:bg-muted/50"
                                 >
                                     <TableCell className="font-mono text-sm text-muted-foreground">
                                         {product.sku}
@@ -111,11 +118,11 @@ export function ProductTable({
                                     <TableCell className="font-medium text-foreground">{product.name}</TableCell>
                                     <TableCell>
                                         <span className="text-sm font-medium text-foreground">
-                                            {product.category}
+                                            {product.category?.name || "Sin categoría"}
                                         </span>
                                     </TableCell>
                                     <TableCell className="text-right text-muted-foreground tabular-nums">
-                                        {formatCurrency(product.costPrice)}
+                                        {formatCurrency(product.costPrice ?? 0)}
                                     </TableCell>
                                     <TableCell className="text-right font-semibold text-foreground tabular-nums">
                                         {formatCurrency(product.salePrice)}
@@ -123,8 +130,19 @@ export function ProductTable({
                                     <TableCell className="text-center">
                                         <StockDisplay stock={product.stock} minStock={product.minStock} />
                                     </TableCell>
+                                    <TableCell className="text-center">
+                                        <Button
+                                            variant="outline"
+                                            size="sm"
+                                            className="h-7 px-2 text-xs"
+                                            onClick={() => onAdjustStock?.(product)}
+                                        >
+                                            <Package className="h-3.5 w-3.5 mr-1" />
+                                            Ajustar
+                                        </Button>
+                                    </TableCell>
                                     <TableCell>
-                                        <StatusBadge status={product.status} />
+                                        <StatusBadge status={product.status?.toLowerCase() as "active" | "inactive" ?? "active"} />
                                     </TableCell>
                                     <TableCell>
                                         <div className="flex items-center justify-end gap-1">
@@ -132,13 +150,15 @@ export function ProductTable({
                                                 variant="ghost"
                                                 size="icon"
                                                 className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                                onClick={() => onEdit?.(product)}
                                             >
                                                 <Pencil className="h-4 w-4" />
                                             </Button>
                                             <Button
-                                                variant="outline"
+                                                variant="ghost"
                                                 size="icon"
-                                                className="h-8 w-8 text-destructive border-destructive/50 hover:bg-destructive/10 hover:text-destructive"
+                                                className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
+                                                onClick={() => onDelete?.(product)}
                                             >
                                                 <Trash2 className="h-4 w-4" />
                                             </Button>
@@ -163,7 +183,7 @@ export function ProductTable({
                         Anterior
                     </Button>
                     <div className="flex items-center gap-1">
-                        {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+                        {Array.from({ length: Math.min(totalPages, 5) }, (_, i) => i + 1).map((page) => (
                             <Button
                                 key={page}
                                 variant={currentPage === page ? "default" : "outline"}
@@ -188,3 +208,4 @@ export function ProductTable({
         </div>
     );
 }
+

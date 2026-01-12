@@ -11,125 +11,126 @@ import { Request } from "express";
  */
 @Injectable({ scope: Scope.REQUEST })
 export class TenantPrismaService {
-    private readonly prismaWithTenant: PrismaClient;
-    private readonly tenantId: string | null;
+    private readonly prisma: PrismaClient;
 
     constructor(@Inject(REQUEST) private readonly request: Request) {
-        // Get tenantId from authenticated user
-        this.tenantId = (request as any).user?.tenantId || null;
+        this.prisma = new PrismaClient();
+    }
 
-        // Create Prisma client with tenant-aware extensions
-        const basePrisma = new PrismaClient();
+    /**
+     * Get tenantId from the request - called at query time to ensure
+     * JwtAuthGuard has already populated request.user
+     */
+    private getTenantIdFromRequest(): string | null {
+        return (this.request as any).user?.tenantId || (this.request as any).tenantId || null;
+    }
 
-        if (this.tenantId) {
-            this.prismaWithTenant = this.createTenantAwarePrisma(basePrisma, this.tenantId);
-        } else {
-            // For unauthenticated routes (login, register), use base prisma
-            this.prismaWithTenant = basePrisma;
+    /**
+     * Auto-inject tenantId into where clause
+     */
+    private injectTenantWhere(args: any): any {
+        const tenantId = this.getTenantIdFromRequest();
+        if (tenantId) {
+            args.where = { ...args.where, tenantId };
         }
+        return args;
     }
 
     /**
-     * Creates a Prisma client extension that automatically filters queries by tenantId
-     * This is Layer 3 of our security model - application-level auto-filtering
+     * Auto-inject tenantId into create data
      */
-    private createTenantAwarePrisma(prisma: PrismaClient, tenantId: string) {
-        return prisma.$extends({
-            query: {
-                // Auto-filter all models that have tenantId
-                user: this.createModelExtension(tenantId),
-                product: this.createModelExtension(tenantId),
-                category: this.createModelExtension(tenantId),
-                sale: this.createModelExtension(tenantId),
-                saleItem: {
-                    // SaleItem doesn't have direct tenantId, filtered through Sale relation
-                    async findMany({ args, query }) {
-                        return query(args);
-                    },
-                },
-                customer: this.createModelExtension(tenantId),
-                transaction: this.createModelExtension(tenantId),
-                companySettings: this.createModelExtension(tenantId),
-            },
-        }) as unknown as PrismaClient;
-    }
-
-    /**
-     * Creates extension methods for a model to auto-inject tenantId
-     */
-    private createModelExtension(tenantId: string) {
-        return {
-            async findMany({ args, query }: { args: any; query: any }) {
-                args.where = { ...args.where, tenantId };
-                return query(args);
-            },
-            async findFirst({ args, query }: { args: any; query: any }) {
-                args.where = { ...args.where, tenantId };
-                return query(args);
-            },
-            async findUnique({ args, query }: { args: any; query: any }) {
-                // For findUnique, we need to verify tenant after fetch
-                const result = await query(args);
-                if (result && (result as any).tenantId !== tenantId) {
-                    return null; // Don't expose data from other tenants
-                }
-                return result;
-            },
-            async create({ args, query }: { args: any; query: any }) {
+    private injectTenantData(args: any): any {
+        const tenantId = this.getTenantIdFromRequest();
+        if (tenantId) {
+            if (Array.isArray(args.data)) {
+                args.data = args.data.map((item: any) => ({ ...item, tenantId }));
+            } else {
                 args.data = { ...args.data, tenantId };
-                return query(args);
-            },
-            async createMany({ args, query }: { args: any; query: any }) {
-                if (Array.isArray(args.data)) {
-                    args.data = args.data.map((item: any) => ({ ...item, tenantId }));
-                } else {
-                    args.data = { ...args.data, tenantId };
-                }
-                return query(args);
-            },
-            async update({ args, query }: { args: any; query: any }) {
-                args.where = { ...args.where, tenantId };
-                return query(args);
-            },
-            async updateMany({ args, query }: { args: any; query: any }) {
-                args.where = { ...args.where, tenantId };
-                return query(args);
-            },
-            async delete({ args, query }: { args: any; query: any }) {
-                args.where = { ...args.where, tenantId };
-                return query(args);
-            },
-            async deleteMany({ args, query }: { args: any; query: any }) {
-                args.where = { ...args.where, tenantId };
-                return query(args);
-            },
-            async count({ args, query }: { args: any; query: any }) {
-                args.where = { ...args.where, tenantId };
-                return query(args);
-            },
-        };
+            }
+        }
+        return args;
     }
 
-    // Expose Prisma models with tenant filtering
-    get user() { return this.prismaWithTenant.user; }
-    get product() { return this.prismaWithTenant.product; }
-    get category() { return this.prismaWithTenant.category; }
-    get sale() { return this.prismaWithTenant.sale; }
-    get saleItem() { return this.prismaWithTenant.saleItem; }
-    get customer() { return this.prismaWithTenant.customer; }
-    get transaction() { return this.prismaWithTenant.transaction; }
-    get companySettings() { return this.prismaWithTenant.companySettings; }
+    // Expose Prisma models with tenant filtering proxies
+    get user() {
+        return this.createTenantProxy(this.prisma.user);
+    }
 
-    // Tenant model is accessible without filtering (for registration, admin)
-    get tenant() { return this.prismaWithTenant.tenant; }
+    get product() {
+        return this.createTenantProxy(this.prisma.product);
+    }
+
+    get category() {
+        return this.createTenantProxy(this.prisma.category);
+    }
+
+    get sale() {
+        return this.createTenantProxy(this.prisma.sale);
+    }
+
+    get saleItem() {
+        // SaleItem doesn't have direct tenantId
+        return this.prisma.saleItem;
+    }
+
+    get customer() {
+        return this.createTenantProxy(this.prisma.customer);
+    }
+
+    get transaction() {
+        return this.createTenantProxy(this.prisma.transaction);
+    }
+
+    get companySettings() {
+        return this.createTenantProxy(this.prisma.companySettings);
+    }
+
+    // Tenant model is accessible without filtering
+    get tenant() {
+        return this.prisma.tenant;
+    }
+
+    /**
+     * Create a proxy that auto-injects tenantId
+     */
+    private createTenantProxy<T extends object>(model: T): T {
+        const self = this;
+        return new Proxy(model, {
+            get(target, prop) {
+                const original = (target as any)[prop];
+                if (typeof original !== "function") {
+                    return original;
+                }
+
+                return async (args: any = {}) => {
+                    const tenantId = self.getTenantIdFromRequest();
+
+                    // Skip tenant filtering if no tenantId (unauthenticated routes)
+                    if (!tenantId) {
+                        return original.call(target, args);
+                    }
+
+                    // Inject tenantId based on operation type
+                    if (prop === "create" || prop === "createMany") {
+                        args = self.injectTenantData(args);
+                    } else if (["findMany", "findFirst", "findUnique", "update", "updateMany", "delete", "deleteMany", "count", "aggregate"].includes(prop as string)) {
+                        args = self.injectTenantWhere(args);
+                    }
+
+                    return original.call(target, args);
+                };
+            },
+        });
+    }
 
     // Transaction support
     async $transaction<T>(fn: (prisma: Prisma.TransactionClient) => Promise<T>): Promise<T> {
-        return this.prismaWithTenant.$transaction(fn);
+        return this.prisma.$transaction(fn);
     }
 
     // Get current tenant ID
     getTenantId(): string | null {
-        return this.tenantId;
+        return this.getTenantIdFromRequest();
     }
 }
+

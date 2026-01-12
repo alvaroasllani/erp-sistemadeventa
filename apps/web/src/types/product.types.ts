@@ -4,18 +4,18 @@ export interface Product {
     sku: string;
     name: string;
     description?: string;
-    category: ProductCategory;
-    costPrice: number;
+    category: ProductCategory | string; // Allow dynamic categories from API
+    costPrice?: number;
     salePrice: number;
     stock: number;
-    minStock: number;
-    status: ProductStatus;
-    image?: string;
-    createdAt: Date;
-    updatedAt: Date;
+    minStock?: number;
+    status?: ProductStatus;
+    image?: string | null;
+    createdAt?: Date | string;
+    updatedAt?: Date | string;
 }
 
-export type ProductStatus = "active" | "inactive";
+export type ProductStatus = "active" | "inactive" | "ACTIVE" | "INACTIVE" | "DISCONTINUED";
 
 export type ProductCategory =
     | "Herramientas"
@@ -25,10 +25,12 @@ export type ProductCategory =
     | "Ferretería General"
     | "Construcción"
     | "Jardinería"
-    | "Seguridad";
+    | "Seguridad"
+    | string; // Allow dynamic categories
 
 export interface ProductFilters {
     search: string;
     category: ProductCategory | "all";
     stockStatus: "all" | "low" | "out";
 }
+
