@@ -117,7 +117,7 @@ export function Header({ onMenuClick, isSidebarCollapsed = false }: HeaderProps)
             <Button
                 variant="ghost"
                 size="icon"
-                className="h-9 w-9 lg:hidden"
+                className="h-11 w-11 md:hidden"
                 onClick={onMenuClick}
             >
                 <Menu className="size-5" />

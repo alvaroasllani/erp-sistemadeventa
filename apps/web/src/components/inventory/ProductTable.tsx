@@ -59,17 +59,18 @@ export function ProductTable({
 }: ProductTableProps) {
     return (
         <div className="space-y-4">
-            <div className="rounded-md border border-border bg-card shadow-sm overflow-hidden">
-                <Table>
+            {/* Overflow wrapper for mobile horizontal scroll */}
+            <div className="rounded-md border border-border bg-card shadow-sm overflow-x-auto">
+                <Table className="min-w-[600px] md:min-w-0">
                     <TableHeader className="bg-muted/50">
                         <TableRow className="border-b border-border hover:bg-transparent">
                             <TableHead className="w-[300px] text-xs font-medium uppercase tracking-wider text-muted-foreground pl-6 py-4">
                                 Producto
                             </TableHead>
-                            <TableHead className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                            <TableHead className="hidden md:table-cell text-xs font-medium uppercase tracking-wider text-muted-foreground">
                                 Categoría
                             </TableHead>
-                            <TableHead className="text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                            <TableHead className="hidden md:table-cell text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
                                 P. Costo
                             </TableHead>
                             <TableHead className="text-right text-xs font-medium uppercase tracking-wider text-muted-foreground">
@@ -107,12 +108,12 @@ export function ProductTable({
                                             </span>
                                         </div>
                                     </TableCell>
-                                    <TableCell className="py-3">
+                                    <TableCell className="hidden md:table-cell py-3">
                                         <Badge variant="secondary" className="font-normal text-muted-foreground bg-muted hover:bg-muted">
                                             {product.category?.name || "General"}
                                         </Badge>
                                     </TableCell>
-                                    <TableCell className="text-right tabular-nums py-3 text-sm text-muted-foreground">
+                                    <TableCell className="hidden md:table-cell text-right tabular-nums py-3 text-sm text-muted-foreground">
                                         {formatCurrency(product.costPrice ?? 0)}
                                     </TableCell>
                                     <TableCell className="text-right tabular-nums font-medium py-3 text-sm text-foreground">
@@ -137,7 +138,7 @@ export function ProductTable({
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => onEdit?.(product)}
-                                                className="h-8 w-8 p-0 text-muted-foreground hover:text-blue-600 hover:bg-blue-50"
+                                                className="h-10 w-10 md:h-8 md:w-8 p-0 text-muted-foreground hover:text-blue-600 hover:bg-blue-50"
                                                 title="Editar"
                                             >
                                                 <Pencil className="h-4 w-4" />
@@ -146,7 +147,7 @@ export function ProductTable({
                                                 variant="ghost"
                                                 size="sm"
                                                 onClick={() => onDelete?.(product)}
-                                                className="h-8 w-8 p-0 text-muted-foreground hover:text-red-600 hover:bg-red-50"
+                                                className="h-10 w-10 md:h-8 md:w-8 p-0 text-muted-foreground hover:text-red-600 hover:bg-red-50"
                                                 title="Eliminar"
                                             >
                                                 <Trash2 className="h-4 w-4" />

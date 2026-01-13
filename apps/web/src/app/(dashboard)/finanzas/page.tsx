@@ -274,7 +274,7 @@ export default function FinanzasPage() {
                                             <Button
                                                 variant="ghost"
                                                 size="icon"
-                                                className="h-8 w-8 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity hover:text-red-600 hover:bg-red-50"
+                                                className="h-10 w-10 md:h-8 md:w-8 text-muted-foreground hover:text-red-600 hover:bg-red-50"
                                                 onClick={async () => {
                                                     const message = trx.type === "SALE"
                                                         ? "¿Estás seguro de anular esta venta? Se repondrá el stock y se registrará un reembolso."

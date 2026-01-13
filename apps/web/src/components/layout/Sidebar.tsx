@@ -19,16 +19,20 @@ import {
 interface SidebarProps {
     isCollapsed?: boolean;
     onCollapse?: () => void;
+    isMobile?: boolean;
+    onMobileClose?: () => void;
 }
 
-export function Sidebar({ isCollapsed = false, onCollapse }: SidebarProps) {
+export function Sidebar({ isCollapsed = false, onCollapse, isMobile = false, onMobileClose }: SidebarProps) {
     const pathname = usePathname();
 
     return (
         <aside
             className={cn(
-                "fixed left-0 top-0 z-40 flex h-screen flex-col border-r border-border bg-sidebar transition-all duration-300",
-                isCollapsed ? "w-16" : "w-64"
+                "flex h-full flex-col bg-sidebar transition-all duration-300",
+                // Only fixed positioning on desktop
+                !isMobile && "fixed left-0 top-0 z-40 h-screen border-r border-border",
+                isCollapsed && !isMobile ? "w-16" : "w-64"
             )}
         >
             {/* Header with minimal Logo */}
@@ -67,20 +71,21 @@ export function Sidebar({ isCollapsed = false, onCollapse }: SidebarProps) {
                             <Link
                                 key={item.href}
                                 href={item.href}
+                                onClick={isMobile ? onMobileClose : undefined}
                                 className={cn(
-                                    "flex items-center gap-3 rounded-md px-3 py-2 text-sm font-medium transition-all duration-200 group relative",
+                                    "flex items-center gap-3 rounded-md px-3 py-2.5 min-h-[44px] text-sm font-medium transition-all duration-200 group relative",
                                     isActive
                                         ? "bg-primary/10 text-primary font-semibold"
                                         : "text-muted-foreground hover:bg-muted/60 hover:text-foreground",
-                                    isCollapsed && "justify-center px-2 py-2.5"
+                                    isCollapsed && !isMobile && "justify-center px-2 py-2.5"
                                 )}
-                                title={isCollapsed ? item.label : undefined}
+                                title={isCollapsed && !isMobile ? item.label : undefined}
                             >
                                 <Icon className={cn(
                                     "size-4.5 flex-shrink-0 transition-colors",
                                     isActive ? "text-primary" : "text-muted-foreground group-hover:text-foreground/80"
                                 )} />
-                                {!isCollapsed && (
+                                {(!isCollapsed || isMobile) && (
                                     <span className="flex-1">{item.label}</span>
                                 )}
 

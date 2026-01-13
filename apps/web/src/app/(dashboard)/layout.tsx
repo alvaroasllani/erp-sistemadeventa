@@ -4,6 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { Header } from "@/components/layout/Header";
+import { Sheet, SheetContent } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/stores/authStore";
 import { Loader2 } from "lucide-react";
@@ -49,37 +50,44 @@ export default function DashboardLayout({
 
     return (
         <div className="min-h-screen bg-background">
-            {/* Sidebar */}
-            <Sidebar
-                isCollapsed={isSidebarCollapsed}
-                onCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-            />
+            {/* Desktop Sidebar - Hidden on mobile */}
+            <div className="hidden md:block">
+                <Sidebar
+                    isCollapsed={isSidebarCollapsed}
+                    onCollapse={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+                />
+            </div>
+
+            {/* Mobile Sidebar - Sheet drawer */}
+            <Sheet open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen}>
+                <SheetContent side="left" className="p-0 w-72">
+                    <Sidebar
+                        isCollapsed={false}
+                        onCollapse={() => { }}
+                        isMobile
+                        onMobileClose={() => setIsMobileMenuOpen(false)}
+                    />
+                </SheetContent>
+            </Sheet>
 
             {/* Main Content */}
             <div
                 className={cn(
                     "flex min-h-screen flex-col transition-all duration-300",
-                    isSidebarCollapsed ? "ml-16" : "ml-60"
+                    // Only add left margin on desktop
+                    "md:ml-60",
+                    isSidebarCollapsed && "md:ml-16"
                 )}
             >
-                {/* Header */}
+                {/* Header - Sticky on mobile */}
                 <Header
-                    onMenuClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                    onMenuClick={() => setIsMobileMenuOpen(true)}
                     isSidebarCollapsed={isSidebarCollapsed}
                 />
 
-                {/* Page Content */}
-                <main className="flex-1 p-6">{children}</main>
+                {/* Page Content - Reduced padding on mobile */}
+                <main className="flex-1 p-4 md:p-6">{children}</main>
             </div>
-
-            {/* Mobile Overlay */}
-            {isMobileMenuOpen && (
-                <div
-                    className="fixed inset-0 z-30 bg-background/80 backdrop-blur-sm md:hidden"
-                    onClick={() => setIsMobileMenuOpen(false)}
-                />
-            )}
         </div>
     );
 }
-

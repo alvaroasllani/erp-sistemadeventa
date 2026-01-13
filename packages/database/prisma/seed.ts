@@ -81,21 +81,21 @@ async function main() {
 
     // 5. Create sample products for tenant
     const products = [
-        { sku: "FER-001", name: "Martillo Profesional Stanley", category: "Herramientas", costPrice: 120, salePrice: 189, stock: 45, minStock: 5 },
-        { sku: "FER-002", name: "Destornillador Phillips #2", category: "Herramientas", costPrice: 35, salePrice: 55, stock: 3, minStock: 10 },
-        { sku: "FER-003", name: "Cinta Métrica 5m Stanley", category: "Herramientas", costPrice: 45, salePrice: 75, stock: 28, minStock: 8 },
-        { sku: "PIN-001", name: "Pintura Blanca Mate 4L", category: "Pinturas", costPrice: 180, salePrice: 280, stock: 15, minStock: 5 },
-        { sku: "FER-004", name: "Cerradura Phillips 500", category: "Seguridad", costPrice: 320, salePrice: 489, stock: 8, minStock: 3 },
-        { sku: "PLO-001", name: 'Tubo PVC 4" x 6m', category: "Plomería", costPrice: 85, salePrice: 129, stock: 32, minStock: 10 },
-        { sku: "ELE-001", name: "Cable 12 AWG Rojo (100m)", category: "Electricidad", costPrice: 580, salePrice: 890, stock: 12, minStock: 5 },
-        { sku: "PIN-002", name: 'Brocha Premium 4"', category: "Pinturas", costPrice: 28, salePrice: 45, stock: 56, minStock: 15 },
-        { sku: "FER-005", name: 'Llave Inglesa Ajustable 12"', category: "Herramientas", costPrice: 95, salePrice: 149, stock: 18, minStock: 5 },
-        { sku: "FER-006", name: "Silicón Transparente 280ml", category: "Ferretería General", costPrice: 42, salePrice: 68, stock: 65, minStock: 20 },
-        { sku: "FER-007", name: "Tornillos Galvanizados (100pz)", category: "Ferretería General", costPrice: 28, salePrice: 45, stock: 120, minStock: 30 },
-        { sku: "FER-008", name: 'Clavos 2" (1kg)', category: "Construcción", costPrice: 22, salePrice: 35, stock: 85, minStock: 25 },
-        { sku: "CON-001", name: "Cemento Gris 50kg", category: "Construcción", costPrice: 180, salePrice: 245, stock: 48, minStock: 20 },
-        { sku: "JAR-001", name: "Manguera 15m Reforzada", category: "Jardinería", costPrice: 120, salePrice: 189, stock: 0, minStock: 5 },
-        { sku: "FER-009", name: "Taladro Percutor 750W", category: "Herramientas", costPrice: 850, salePrice: 1250, stock: 4, minStock: 2 },
+        { sku: "FER-001", name: "Martillo Profesional Stanley", category: "Herramientas", costPrice: 80, salePrice: 120, stock: 45, minStock: 5 },
+        { sku: "FER-002", name: "Destornillador Phillips #2", category: "Herramientas", costPrice: 20, salePrice: 35, stock: 3, minStock: 10 },
+        { sku: "FER-003", name: "Cinta Métrica 5m Stanley", category: "Herramientas", costPrice: 30, salePrice: 50, stock: 28, minStock: 8 },
+        { sku: "PIN-001", name: "Pintura Blanca Mate 4L", category: "Pinturas", costPrice: 120, salePrice: 180, stock: 15, minStock: 5 },
+        { sku: "FER-004", name: "Cerradura Phillips 500", category: "Seguridad", costPrice: 150, salePrice: 220, stock: 8, minStock: 3 },
+        { sku: "PLO-001", name: 'Tubo PVC 4" x 6m', category: "Plomería", costPrice: 60, salePrice: 95, stock: 32, minStock: 10 },
+        { sku: "ELE-001", name: "Cable 12 AWG Rojo (100m)", category: "Electricidad", costPrice: 140, salePrice: 200, stock: 12, minStock: 5 },
+        { sku: "PIN-002", name: 'Brocha Premium 4"', category: "Pinturas", costPrice: 18, salePrice: 30, stock: 56, minStock: 15 },
+        { sku: "FER-005", name: 'Llave Inglesa Ajustable 12"', category: "Herramientas", costPrice: 70, salePrice: 110, stock: 18, minStock: 5 },
+        { sku: "FER-006", name: "Silicón Transparente 280ml", category: "Ferretería General", costPrice: 25, salePrice: 40, stock: 65, minStock: 20 },
+        { sku: "FER-007", name: "Tornillos Galvanizados (100pz)", category: "Ferretería General", costPrice: 15, salePrice: 25, stock: 120, minStock: 30 },
+        { sku: "FER-008", name: 'Clavos 2" (1kg)', category: "Construcción", costPrice: 12, salePrice: 20, stock: 85, minStock: 25 },
+        { sku: "CON-001", name: "Cemento Gris 50kg", category: "Construcción", costPrice: 100, salePrice: 150, stock: 48, minStock: 20 },
+        { sku: "JAR-001", name: "Manguera 15m Reforzada", category: "Jardinería", costPrice: 80, salePrice: 130, stock: 0, minStock: 5 },
+        { sku: "FER-009", name: "Taladro Percutor 750W", category: "Herramientas", costPrice: 160, salePrice: 250, stock: 4, minStock: 2 },
     ];
 
     for (const product of products) {

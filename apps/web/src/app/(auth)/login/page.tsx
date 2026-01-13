@@ -21,7 +21,7 @@ export default function LoginPage() {
 
         const success = await login(email, password);
         if (success) {
-            router.push("/dashboard");
+            router.push("/pos");
         }
     };
 
