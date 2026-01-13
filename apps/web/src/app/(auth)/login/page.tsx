@@ -91,9 +91,11 @@ export default function LoginPage() {
                             {isLoading ? "Iniciando sesión..." : "Iniciar Sesión"}
                         </Button>
                     </form>
-                    <p className="mt-4 text-center text-xs text-muted-foreground">
-                        Usa las credenciales de tu cuenta registrada
-                    </p>
+                    <div className="mt-6 pt-4 border-t border-border">
+                        <p className="text-center text-xs text-muted-foreground mb-2">
+                            Demo: <code className="bg-muted px-1.5 py-0.5 rounded text-foreground/70">admin@nexus.com</code> / <code className="bg-muted px-1.5 py-0.5 rounded text-foreground/70">admin123</code>
+                        </p>
+                    </div>
                 </CardContent>
             </Card>
         </div>
