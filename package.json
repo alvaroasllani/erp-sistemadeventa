@@ -4,16 +4,18 @@
   "private": true,
   "description": "Sistema ERP moderno para retail",
   "scripts": {
+    "postinstall": "pnpm --filter @nexus/database generate",
     "dev": "pnpm --filter web dev",
     "dev:api": "pnpm --filter api start:dev",
     "dev:all": "pnpm --parallel --filter web --filter api dev",
-    "build": "pnpm --filter web build && pnpm --filter api build",
+    "build": "pnpm --filter @nexus/database generate && pnpm --filter web build && pnpm --filter api build",
     "build:web": "pnpm --filter web build",
-    "build:api": "pnpm --filter api build",
+    "build:api": "pnpm --filter @nexus/database generate && pnpm --filter api build",
     "lint": "pnpm -r lint",
-    "db:generate": "pnpm --filter database prisma generate",
-    "db:migrate": "pnpm --filter database prisma migrate dev",
-    "db:seed": "pnpm --filter database prisma db seed"
+    "db:generate": "pnpm --filter @nexus/database generate",
+    "db:migrate": "pnpm --filter @nexus/database prisma migrate dev",
+    "db:push": "pnpm --filter @nexus/database prisma db push",
+    "db:seed": "pnpm --filter @nexus/database prisma db seed"
   },
   "keywords": [
     "erp",

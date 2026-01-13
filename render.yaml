@@ -1,0 +1,23 @@
+# Render Blueprint - WebCody ERP API
+# This file configures the deployment on Render.com
+
+services:
+  - type: web
+    name: webcody-erp-api
+    runtime: node
+    region: oregon
+    plan: free
+    buildCommand: cd ../.. && pnpm install && pnpm run build:api
+    startCommand: cd apps/api && npm run start:prod
+    rootDir: apps/api
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: JWT_EXPIRES_IN
+        value: 7d
+      - key: FRONTEND_URL
+        sync: false
